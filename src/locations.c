@@ -1,4 +1,5 @@
 #include "../include/locations.h"
+#include <stdio.h>
 
 const char* EncounterTypeStrings[3] = {
     "Grass",
@@ -146,10 +147,12 @@ void LocationListMonsInLocation(GameVersion gv, AreaEntry entry) {
             break;
     }
 
+    fprintf(stdout, "\n-----%s----\n", entry.name);
     for (size_t i = 0; i < slot_count; i++) {
         fprintf(stdout, "Slot: %d | %s | Level: %d-%d\n",
                slots[i].index, pokemon[slots[i].mon].name, slots[i].minL, slots[i].maxL);
     }
+    fprintf(stdout, "\n");
 
     free(slots);
 }
