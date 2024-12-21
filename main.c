@@ -1,127 +1,58 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include <unistd.h>
+#include "include/enums.h"
+#include "include/locations.h"
 #include "include/pokemon.h"
 #include "include/ivs.h"
 #include "include/seeds.h"
-#include "include/rng.h"
 #include "include/filters.h"
 #include "include/settings.h"
 
+#define COMATCH(s, c) (!strcmp((s),(c)))
+#define COMMANDS_COUNT (sizeof(commands)/sizeof(commands[0]))
+
+size_t _getSubCommandCount(const char** sc);
+
+void listHandler(int argc, char** argv);
+void commandHelp();
+
 typedef struct {
     const char* command;
-    void (*handler)();
+    void (*handler)(int argc, char** argv);
+    const char* description;
+    const char** subcommands;
 } Command;
 
-void listHandler(const char* arg1, const char* arg2) {
-    if (!strcmp(arg1, "natures")) {
-        PokemonListNatures();
-    } else {
-        fprintf(stderr, "Unknown subcommand: %s\n", arg1);
-    }
-    if (!strcmp(arg1, "locations")) {
-        if (!strcmp(arg2, "grass")) {
-            LocationListFromEncType(Grass);
-        } else if (!strcmp(arg2, "water")) {
-            LocationListFromEncType(Water);
-        } else if (!strcmp(arg2, "rock")) {
-            LocationListFromEncType(RockSmash);
-        } else
-            fprintf(stderr, "Unable to match location area type\n");
-    }
-}
+const char* LIST_SUB_COMMANDS[4] = {
+    "natures",
+    "locations",
+    "encounter",
+    NULL
+};
+
+Command commands[] = {
+    { "list", listHandler, "List various related data", LIST_SUB_COMMANDS }
+};
 
 int main(int argc, char** argv) {
-    if (!strcmp(argv[1], "list")) {
-        if (!strcmp(argv[2], "Natures")) {
-            PokemonListNatures();
-        } else if (!strcmp(argv[2], "locations")) {
-            if (!strcmp(argv[3], "Grass")) {
-                LocationListFromEncType(Grass);
-            } else if (!strcmp(argv[3], "Water")) {
-                LocationListFromEncType(Water);
-            } else if (!strcmp(argv[3], "Rock")) {
-                LocationListFromEncType(RockSmash);
-            } else
-                fprintf(stderr, "Unable to match location area type\n");
-                return EXIT_FAILURE;
-        } else {
-            fprintf(stderr, "Unable to find that command:\n");
-            return EXIT_FAILURE;
+    if (argc < 2) {
+        commandHelp();
+        return EXIT_FAILURE;
+    }
+
+    for (size_t i = 0; i < COMMANDS_COUNT; i++) {
+        if (COMATCH(argv[1], commands[i].command)) {
+            commands[i].handler(argc, argv);
+            return EXIT_SUCCESS;
         }
-        return EXIT_SUCCESS;
     }
 
     char* path = "settings.ini";
-    char* inputMon = NULL;
-    char* inputNature = NULL;
-    char* lend;
-    int llevel = 0;
-    uint32_t inputSeed = 0;
-    int wflag = 0;
-    int sflag = 0;
-    long l;
 
-    int opt;
-    while ((opt = getopt(argc, argv, "I:m:l:n:t:ws")) != -1) {
-        switch (opt) {
-            case 'I':
-                path = optarg;
-                break;
-            case 'm':
-                inputMon = optarg;
-                break;
-            case 'l':
-                l = strtol(optarg, &lend, 10);
-                if (lend == optarg) {
-                    fprintf(stderr, "Invalid level input!\n");
-                } else if (l > 100 || l < 5) {
-                    fprintf(stderr, "Level must be between 5 an 100\n");
-                } else
-                    llevel = (int)l;
-                break;
-            case 'n':
-                 if (PokemonGetNatureIndex(optarg) > 0) {
-                     inputNature = optarg;
-                 } else fprintf(stderr, "Invalid nature string provided\n");
-                break;
-            case 't':
-                l = strtol(optarg, &lend, 16);
-                if (lend == optarg) {
-                    fprintf(stderr, "Invalid level input!\n");
-                } else
-                    inputSeed = (uint32_t)l;
-                break;
-            case 'w':
-                if (sflag) {
-                    fprintf(stderr, "Only one encounter type can be selected at once ( -w or -s)\n");
-                    exit(EXIT_FAILURE);
-                } else {
-                    wflag = 1;
-                }
-                break;
-            case 's':
-                if (wflag) {
-                    fprintf(stderr, "Only one encounter type can be selected at once ( -w or -s)\n");
-                    exit(EXIT_FAILURE);
-                } else {
-                    sflag = 1;
-                }
-                break;
-            default:
-                fprintf(stderr, "Unknown option: %c\n", optopt);
-                exit(EXIT_FAILURE);
-        }
-    }
-
-    int m_index = PokemonSearchIndex(inputMon);
-
-    if (m_index > 0) {
-        fprintf(stdout, "Mon index = %d, Level = %d, Nature = %s (%d), Target Seed = %X\n", m_index, llevel, inputNature,
-                PokemonGetNatureIndex(inputNature), inputSeed);
-    }
     /* Make sure the file actually exists*/
     if (access(path, F_OK)) {
         perror("Unable to find ini file!\n");
@@ -270,4 +201,100 @@ int main(int argc, char** argv) {
     free(slots);
 
     return EXIT_SUCCESS;
+}
+
+size_t _getSubCommandCount(const char** sc) {
+    size_t count = 0;
+    while(sc[count] != NULL) {
+        count++;
+    }
+    return count;
+}
+
+void commandHelp() {
+    fprintf(stdout, "----List of available commands:----\n\n");
+    for (size_t i = 0; i < COMMANDS_COUNT; i++) {
+        fprintf(stdout, "Name: '%s'\n", commands[i].command);
+        fprintf(stdout, "Description: '%s'\nSubcommands:\n", commands[i].description);
+        for (size_t j = 0; j < _getSubCommandCount(commands[i].subcommands); j++) {
+            fprintf(stdout, "   - %s\n", commands[i].subcommands[j]);
+        }
+    }
+}
+
+void listHandler(int argc, char** argv) {
+    long l;
+    char* lend;
+
+    /* List command */
+    const char* command = commands[0].command;
+
+    if (argc < 3) {
+        fprintf(stdout, "Error: 'list requires additional arguments.\n");
+        fprintf(stdout, "   'list natures'\n");
+        fprintf(stdout, "   'list encounters grass'\n");
+        return;
+    }
+    const char* subcommand = argv[2];
+
+    if (COMATCH(subcommand, LIST_SUB_COMMANDS[0])) {
+        /* bin list natures (3)*/
+        PokemonListNatures();
+    } else if (COMATCH(subcommand, LIST_SUB_COMMANDS[1])) {
+        /* bin list locations grass (4) */
+        if (argc < 4) {
+            fprintf(stdout, "Missing encounter arguments. Encounter type required:\n");
+            fprintf(stdout, "Available options:\n");
+            fprintf(stdout, "   'grass'\n");
+            fprintf(stdout, "   'water'\n");
+            fprintf(stdout, "   'rock'\n");
+            return;
+        }
+        const char* location = argv[3];
+        if (COMATCH(location, "grass")) {
+            LocationListFromEncType(Grass);
+        } else if (COMATCH(location, "water")) {
+            LocationListFromEncType(Water);
+        } else if (COMATCH(location, "rock")) {
+            LocationListFromEncType(RockSmash);
+        } else {
+            fprintf(stdout, "unable to match location string string\n");
+            return;
+        }
+    } else if (COMATCH(subcommand, LIST_SUB_COMMANDS[2])) {
+        if (argc < 6) {
+            /* bin list encounter grass 46 lg */
+            fprintf(stdout, "Missing location arguments. Example command:\n");
+            fprintf(stdout, "   'list encounter [location type] [index] [Game Version]\n");
+            fprintf(stdout, "   'list encounter grass 46 lg'\n");
+            fprintf(stdout, "   'list encounter grass 46 fr'\n");
+            return;
+        }
+        const char* location = argv[3];
+        const char* map = argv[4];
+        const char* version = argv[5];
+
+        GameVersion gv = FR;
+        if (COMATCH(version, "lg")) {
+            gv = LG;
+        }
+
+        l = strtol(map, &lend, 10);
+        if (lend == map) {
+            fprintf(stdout, "Encounter location index must be an integer!");
+            return;
+        } else if (COMATCH(location, "grass") && l < 90) {
+            LocationListMonsInLocation(gv, LAND_AREA_MAP[l]);
+        } else if (COMATCH(location, "water") && l < 50) {
+            LocationListMonsInLocation(gv, WATER_AREA_MAP[l]);
+        } else if (COMATCH(location, "rock") && l < 13) {
+            LocationListMonsInLocation(gv, ROCK_AREA_MAP[l]);
+        } else {
+            fprintf(stderr, "An unknown error occurred.\n");
+            return;
+        }
+    } else {
+        fprintf(stderr, "Subcommand not recognized!\n");
+        return;
+    }
 }
