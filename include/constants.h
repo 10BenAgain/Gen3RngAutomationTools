@@ -10,5 +10,4 @@
 #define MINIMUM_INTRO_TIME      34744
 #define MAXIMUM_INTRO_TIME      75640
 
-
 #endif
