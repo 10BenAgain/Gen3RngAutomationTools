@@ -396,7 +396,7 @@ const Encounter StaticEncounters[] = {
         {Roamers,       "Suicune",      50},
 };
 
-const char* 
+const char*
 PokemonGetNatureString(uint8_t key) {
     if (key > 25)
         return "Huh?!";
@@ -413,12 +413,12 @@ PokemonGetNatureIndex(const char* nat) {
     return -1;
 }
 
-const char* 
+const char*
 PokemonGetGenderString(uint8_t key) {
     switch (key)
     {
     case 0:
-    case 1: 
+    case 1:
         return GENDER_STRINGS[key];
     default:
         return GENDER_STRINGS[2];
@@ -486,14 +486,14 @@ PokemonGetHP(const uint8_t *IVs) {
 // 0000011 00000011 00000011 00000011 = (0x3030303 & 3000000) = (00000011 00000000 00000000 00000000) >> 18 = 1100 0000
 // 0000011 00000011 00000011 00000011 = (0x3030303 & 30000  ) = (         00000011 00000000 00000000) >> 12 = 0011 0000
 // 0000011 00000011 00000011 00000011 = (0x3030303 & 300  ) =   (                  00000011 00000000) >> 6  = 0000 1100
-// 0000011 00000011 00000011 00000011 = (0x3030303 & 3  ) =   (                             00000011) 
+// 0000011 00000011 00000011 00000011 = (0x3030303 & 3  ) =   (                             00000011)
 
 uint8_t
 PokemonGetUnownLetter(uint32_t PID) {
     return (
-        ((PID & 0x3000000) >> 18) | 
-        ((PID & 0x30000) >> 12) | 
-        ((PID & 0x300) >> 6) | 
+        ((PID & 0x3000000) >> 18) |
+        ((PID & 0x30000) >> 12) |
+        ((PID & 0x300) >> 6) |
         (PID & 0x3)) % 28;
 }
 
@@ -525,6 +525,7 @@ PokemonSearchIndex(const char* name) {
 
 void
 PokemonListNatures() {
+    fprintf(stdout, "\n----Nature Information----\n");
     for (size_t i = 0; i < 25; i++) {
         const char* stat_up = "None";
         const char* stat_down = "None";
@@ -538,6 +539,34 @@ PokemonListNatures() {
         }
         fprintf(stdout, "%d | %s | +%s -%s\n", natures[i].key, natures[i].name, stat_up, stat_down);
     }
+    fprintf(stdout, "\n");
+}
+
+void
+PokemonListShinyTypes() {
+    fprintf(stdout, "\n----Shiny Type Strings----\n");
+    for (size_t i = 0; i < 3; i++) {
+        fprintf(stdout, "%s\n", SHINY_TYPES[i]);
+    }
+    fprintf(stdout, "\n");
+}
+
+void
+PokemonListHiddenPowerTypes() {
+    fprintf(stdout, "\n----Hidden Power Strings----\n");
+    for (size_t i = 0; i < 16; i++) {
+        fprintf(stdout, "%s\n", HP[i].type);
+    }
+    fprintf(stdout, "\n");
+}
+
+void
+PokemonListGenderStrings() {
+    fprintf(stdout, "\n----Gender Strings----\n");
+    for (size_t i = 0; i < 3; i++) {
+        fprintf(stdout, "%s\n", GENDER_STRINGS[i]);
+    }
+    fprintf(stdout, "\n");
 }
 
 uint8_t

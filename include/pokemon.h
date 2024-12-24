@@ -74,9 +74,12 @@ extern const Encounter StaticEncounters[];
 extern const HiddenPower HP[16];
 extern const double nature_multiplier_table[25][5];
 
-int PokemonSearchIndex(const char* name);
-
 void PokemonListNatures();
+void PokemonListShinyTypes();
+void PokemonListHiddenPowerTypes();
+void PokemonListGenderStrings();
+
+int PokemonSearchIndex(const char* name);
 uint8_t PokemonFindAbilityIndex(uint8_t dex, const char* name);
 int PokemonGetNatureIndex(const char* nat);
 

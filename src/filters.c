@@ -1,4 +1,5 @@
 #include "../include/filters.h"
+#include <stdio.h>
 
 void pushSEnc(senc_node** h, StaticEncounter enc);
 void pushWenc(wenc_node** h, WildEncounter enc);
@@ -32,7 +33,7 @@ void FilterGenerateStaticEncounterFromSeedList(
 }
 
 void FilterGenerateStaticEncounter(senc_node** list, Player pl, Method met, StaticFilter filter, uint16_t mon, uint32_t seed, uint32_t init, uint32_t max) {
-    if (max <= 0) {
+    if (max <= 0 || init > max) {
         return;
     }
 
@@ -97,21 +98,21 @@ void FilterGenerateStaticEncounter(senc_node** list, Player pl, Method met, Stat
             free(enc);
             continue;
         }
-       
+
         enc->shiny =  PokemonIsShiny(enc->PID, pl.TID, pl.SID);
 
         if (!shinyFilterCheckStatic(&filter, enc->shiny)) {
             free(enc);
             continue;
         }
-        
+
         enc->gender = PokemonGetGenderString(PokemonGetGender(enc->PID, pokemon[mon].gr));
 
         if (!genderFilterCheckStatic(&filter, PokemonGetGender(enc->PID, pokemon[mon].gr))) {
             free(enc);
             continue;
         }
-        
+
         enc->hp = HP[PokemonGetHPValue(enc->IVs)].type;
         enc->hp_pow = PokemonGetHP(enc->IVs);
         enc->seed = initial_seed;
@@ -147,9 +148,9 @@ void FilterGenerateWildEncounter(
         WildFilter filter,
         uint32_t seed,
         uint32_t init,
-        uint32_t max) {
-
-    if (max <= 0) {
+        uint32_t max
+) {
+    if (max <= 0 || init > max) {
         return;
     }
 
@@ -249,7 +250,7 @@ void FilterGenerateWildEncounter(
             free(enc);
             continue;
         }
-        
+
         enc->hp = HP[PokemonGetHPValue(enc->IVs)].type;
         enc->hp_pow = PokemonGetHP(enc->IVs);
         enc->advances = i + init;
@@ -366,6 +367,8 @@ FilterPrintSEncounterList(senc_node* enc) {
     temp = enc;
 
     int i;
+    fprintf(stdout, "Seed | Advances | PID | Nature | Ability | HP | Atk | Def | Spa | Spd | Spe | Shiny | HP | HP Power | Gender\n");
+    fprintf(stdout, "-------------------------------------------------------------------------------------------------------------\n");
     while(temp != NULL) {
         fprintf(stdout, "%X | ", temp->se.seed);
         fprintf(stdout, "%d | ", temp->se.advances);
@@ -375,7 +378,7 @@ FilterPrintSEncounterList(senc_node* enc) {
         for (i = 0; i < 6; i ++) {
             printf("%d | ", temp->se.IVs[i]);
         }
-        fprintf(stdout, "| %s ", SHINY_TYPES[temp->se.shiny]);
+        fprintf(stdout, " %s ", SHINY_TYPES[temp->se.shiny]);
         fprintf(stdout, "| %s ", temp->se.hp);
         fprintf(stdout, "| %d ", temp->se.hp_pow);
         fprintf(stdout, "| %s \n", temp->se.gender);
@@ -391,6 +394,8 @@ FilterPrintWEncounterList(wenc_node* enc) {
 
     int i, c;
     c = 0;
+    fprintf(stdout, "Seed | Advances | Name | Slot | Level | PID | Nature | Ability | HP | Atk | Def | Spa | Spd | Spe | Shiny | HP | HP Power | Gender\n");
+    fprintf(stdout, "-----------------------------------------------------------------------------------------------------------------------------------\n");
     while(temp != NULL) {
         Pokemon m = pokemon[temp->we.mon];
         fprintf(stdout, "%X | ", temp->we.seed);

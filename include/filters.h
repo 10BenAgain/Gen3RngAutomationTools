@@ -69,7 +69,7 @@ typedef struct {
 } StaticFilter;
 
 typedef struct {
-    uint8_t mon;
+    uint16_t mon;
     uint8_t level;
     uint8_t ability[2]; // 0 = 0, 1 = 1
     uint8_t hp_iv_bounds[2];
