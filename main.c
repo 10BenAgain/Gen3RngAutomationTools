@@ -18,6 +18,7 @@
 size_t _getSubCommandCount(const char** sc);
 
 void listHandler(int argc, char** argv);
+void searchHandler(int argc, char** argv);
 void commandHelp();
 
 typedef struct {
@@ -25,21 +26,409 @@ typedef struct {
     void (*handler)(int argc, char** argv);
     const char* description;
     const char** subcommands;
+    const char** flags;
 } Command;
 
-const char* LIST_SUB_COMMANDS[4] = {
+const char* LIST_SUB_COMMANDS[7] = {
     "natures",
+    "gender",
+    "shiny",
+    "hidden",
     "locations",
     "encounter",
     NULL
 };
 
-Command commands[] = {
-    { "list", listHandler, "List various related data", LIST_SUB_COMMANDS }
+const char* SEARCH_SUBCOMMANDS[2] = {
+    "static",
+    "wild"
 };
 
+const char* SEARCH_FLAGS[] = {
+    "-m", /* Method */
+    "-h", /* Hidden power filter */
+    "-s", /* Advances start point */
+    "-I", /* Settings profile path */
+    "-S", /* Seed list path */
+};
+
+Command commands[] = {
+    { "list", listHandler, "List various related data", LIST_SUB_COMMANDS },
+    { "search", searchHandler, "Search for Pokemon", SEARCH_SUBCOMMANDS}
+};
+
+void staticSearchExample() {
+    fprintf(stdout, "\nMissing required arguements for static search command:\n");
+    fprintf(stdout, "Static search arguments: bin search static [Advances] [Pokemon] [Nature] [Level] [Ability] [HP] [ATK] [DEF] [SPA] [SPD] [SPE] [Gender] [Shiny]\n");
+    fprintf(stdout, "Exmaple command:\n");
+    fprintf(stdout, "   --search static 1000 Snorlax Sassy 30 0 145 80 58 49 73 32 Male Star\n");
+    fprintf(stdout, "   --search static 1000 Snorlax 30 Relaxed 1 145 80 58 49 73 32 Female Square\n");
+}
+
+void wildSearchExample() {
+    fprintf(stdout, "\nMissing required arguements for wild search command:\n");
+    fprintf(stdout, "Wild search arguments: bin search wild [Advances] [Encounter Type] [Location] [Pokemon] [Nature] [Level] [Ability] [HP] [ATK] [DEF] [SPA] [SPD] [SPE] [Gender] [Shiny]\n");
+    fprintf(stdout, "Exmaple command:\n");
+    fprintf(stdout, "   --search wild 1000 grass 55 Sandshrew Sassy 15 0 44 32 38 12 18 21 Female Star\n");
+    fprintf(stdout, "   --search wild 1000 grass 55 Sandshrew Jolly 15 1 44 32 38 12 18 21 Male None\n");
+}
+
+void searchMissingArgs(const char* subCommand) {
+    if (COMATCH(subCommand, SEARCH_SUBCOMMANDS[0])) {
+        staticSearchExample();
+        return;
+    }
+    if (COMATCH(subCommand, SEARCH_SUBCOMMANDS[1])) {
+        wildSearchExample();
+        return;
+    }
+}
+
+void searchHandler(int argc, char** argv) {
+    /* bin search static [Advances] [Pokemon] [Nature] [Level] [Ability] [HP] [ATK] [DEF] [SPA] [SPD] [SPE] [Gender] [Shiny] (16) */
+    /* bin search wild [Advances] [Encounter Type] [Location] [Pokemon] [Nature] [Level] [Ability] [HP] [ATK] [DEF] [SPA] [SPD] [SPE] [Gender] [Shiny] (18) */
+    long l;
+    char* lend;
+    char* inipath = "settings.ini";
+
+    Player player;
+    Settings settings;
+    Config cf;
+
+    uint16_t mon = 0;
+    uint32_t maxAdvances = 0;
+    uint32_t initAdvances = 0;
+
+    uint64_t len, s_len;
+
+    EncounterType et = Grass;
+    AreaType at = LAND;
+    const AreaEntry* map = LAND_AREA_MAP;
+    AreaEntry entry;
+
+    Method wildMethod = H1;
+
+    int wflag = 0;
+    int sflag = 0;
+
+    StaticFilter sf;
+    WildFilter wf;
+    IVEstimate est;
+
+    if (argc < 18 && argc > 16) {
+        searchMissingArgs(argv[2]);
+        return;
+    }
+
+    if (argc < 16 && argc >= 3) {
+        searchMissingArgs(argv[2]);
+        return;
+    }
+
+    if (COMATCH(argv[2], SEARCH_SUBCOMMANDS[0])) {
+        sflag = 1;
+
+        /* Advances */
+        l = strtol(argv[3], &lend, 10);
+        if (lend == argv[3]) {
+            fprintf(stdout, "Advances must be an integer\n");
+            return;
+        } else
+            maxAdvances = (uint32_t)l;
+
+        /* Pokemon */
+        int monDex = PokemonSearchIndex(argv[4]);
+        if (monDex >= 0) {
+            mon = (uint32_t)monDex;
+            est.mon = pokemon[mon];
+        } else {
+            fprintf(stdout, "Unable to find specified Pokemon\n");
+            return;
+        }
+
+        /* Nature */
+        int natIndex = PokemonGetNatureIndex(argv[5]);
+        if (natIndex >= 0) {
+            Nature nat = natures[(uint32_t)natIndex];
+            est.nt = nat;
+            FilterApplyNatureToStatic(nat, &sf);
+        } else {
+            fprintf(stdout, "Unable to find specified Nature\n");
+            return;
+        }
+
+        /* Level */
+        l = strtol(argv[6], &lend, 10);
+        if (lend == argv[6]) {
+            fprintf(stdout, "Level must be an integer\n");
+            return;
+        } else {
+            sf.level = (uint8_t)l;
+            est.level = (uint8_t)l;
+        }
+
+        /* Ability */
+        l = strtol(argv[7], &lend, 10);
+        if (lend == argv[7]) {
+            fprintf(stdout, "Ability must be an integer\n");
+            return;
+        } else if (l == 0) {
+            sf.ability[0] = 1;
+        } else if (l == 1) {
+            sf.ability[1] = 1;
+        } else {
+            fprintf(stdout, "Ability must be an integer. (0 or 1)\n");
+            return;
+        }
+
+        /* Stats */
+        char* inStats[6] = { argv[8], argv[9], argv[10], argv[11], argv[12], argv[13] };
+        for (size_t i = 0; i < 6; i++) {
+            l = strtol(inStats[i], &lend, 10);
+            if (lend == inStats[i]) {
+                fprintf(stdout, "Stat must be an integer\n");
+                return;
+            } else {
+                est.stats[i] = (uint16_t)l;
+            }
+        }
+        fprintf(stdout, "\n");
+        FilterApplyIVEstimateToStatic(&est, &sf);
+
+        /*  Gender */
+        if (COMATCH(argv[14], GENDER_STRINGS[0])) {
+            sf.gender[0] = 1;
+        } else if (COMATCH(argv[14], GENDER_STRINGS[1])) {
+            sf.gender[1] = 1;
+        } else if (COMATCH(argv[14], GENDER_STRINGS[2])) {
+            sf.gender[2] = 1;
+        } else {
+            fprintf(stdout, "Unable to match input gender string\n");
+            return;
+        }
+
+        /*  Shiny */
+        if (COMATCH(argv[15], SHINY_TYPES[0])) {
+            sf.shiny[2] = 1;
+        } else if (COMATCH(argv[15], SHINY_TYPES[1])) {
+            sf.shiny[1] = 1;
+        } else if (COMATCH(argv[15], SHINY_TYPES[2])) {
+            sf.shiny[0] = 1;
+        } else {
+            fprintf(stdout, "Unable to match input shiny type string\n");
+            return;
+        }
+
+    } else if (COMATCH(argv[2], SEARCH_SUBCOMMANDS[1])) {
+        wflag = 1;
+
+        /* Advances */
+        l = strtol(argv[3], &lend, 10);
+        if (lend == argv[3]) {
+            fprintf(stdout, "Advances must be an integer\n");
+            return;
+        } else
+            maxAdvances = (uint32_t)l;
+
+        /* Area Entry first as to not check later */
+        l = strtol(argv[5], &lend, 10);
+        if (lend == argv[5]) {
+            fprintf(stdout, "Advances must be an integer\n");
+            return;
+        }
+
+        /* Encounter Type */
+        if (COMATCH(argv[4], "grass")) {
+            at = LAND;
+            if (l >= 0 && l <= MAPSIZE(LAND_AREA_MAP)) {
+                map = LAND_AREA_MAP;
+                entry = map[l];
+            } else {
+                fprintf(stdout, "Area entry for Grass must be a number between 0-89\n");
+                return;
+            }
+        } else if (COMATCH(argv[4], "water")) {
+            at = WATER;
+            if (l >= 0 && l <= MAPSIZE(WATER_AREA_MAP)) {
+                map = WATER_AREA_MAP;
+                entry = map[l];
+            } else {
+                fprintf(stdout, "Area entry for Grass must be a number between 0-49\n");
+                return;
+            }
+        } else if (COMATCH(argv[4], "rock")) {
+            at = ROCKSMASH;
+            if (l >= 0 && l <= MAPSIZE(ROCK_AREA_MAP)) {
+                map = ROCK_AREA_MAP;
+                entry = map[l];
+            } else {
+                fprintf(stdout, "Area entry for Grass must be a number between 0-12\n");
+                return;
+            }
+        } else {
+            fprintf(stdout, "Unable to match encounter type to input string.\n");
+            return;
+        }
+
+        /* Pokemon */
+        int monDex = PokemonSearchIndex(argv[6]);
+        if (monDex >= 0) {
+            mon = (uint32_t)monDex;
+            wf.mon = mon;
+            est.mon = pokemon[mon];
+        } else {
+            fprintf(stdout, "Unable to find specified Pokemon\n");
+            return;
+        }
+
+        /* Nature */
+        int natIndex = PokemonGetNatureIndex(argv[7]);
+        if (natIndex >= 0) {
+            Nature nat = natures[(uint32_t)natIndex];
+            est.nt = nat;
+            FilterApplyNatureToWild(nat, &wf);
+        } else {
+            fprintf(stdout, "Unable to find specified Nature\n");
+            return;
+        }
+
+        /* Level */
+        l = strtol(argv[8], &lend, 10);
+        if (lend == argv[8]) {
+            fprintf(stdout, "Level must be an integer\n");
+            return;
+        } else {
+            wf.level = (uint8_t)l;
+            est.level = (uint8_t)l;
+        }
+
+        /* Ability */
+        l = strtol(argv[9], &lend, 10);
+        if (lend == argv[9]) {
+            fprintf(stdout, "Ability must be an integer\n");
+            return;
+        } else if (l == 0) {
+            wf.ability[0] = 1;
+        } else if (l == 1) {
+            wf.ability[1] = 1;
+        } else {
+            fprintf(stdout, "Ability must be an integer. (0 or 1)\n");
+            return;
+        }
+
+        /* Stats */
+        char* inStats[6] = { argv[10], argv[11], argv[12], argv[13], argv[14], argv[15] };
+        for (size_t i = 0; i < 6; i++) {
+            l = strtol(inStats[i], &lend, 10);
+            if (lend == inStats[i]) {
+                fprintf(stdout, "Stat must be an integer\n");
+                return;
+            } else {
+                est.stats[i] = (uint16_t)l;
+            }
+        }
+        fprintf(stdout, "\n");
+        FilterApplyIVEstimateToWild(&est, &wf);
+
+        /*  Gender */
+        if (COMATCH(argv[16], GENDER_STRINGS[0])) {
+            wf.gender[0] = 1;
+        } else if (COMATCH(argv[16], GENDER_STRINGS[1])) {
+            wf.gender[1] = 1;
+        } else if (COMATCH(argv[16], GENDER_STRINGS[2])) {
+            wf.gender[2] = 1;
+        } else {
+            fprintf(stdout, "Unable to match input gender string\n");
+            return;
+        }
+
+        /*  Shiny */
+        if (COMATCH(argv[17], SHINY_TYPES[0])) {
+            wf.shiny[2] = 1;
+        } else if (COMATCH(argv[17], SHINY_TYPES[1])) {
+            wf.shiny[1] = 1;
+        } else if (COMATCH(argv[17], SHINY_TYPES[2])) {
+            wf.shiny[0] = 1;
+        } else {
+            fprintf(stdout, "Unable to match input shiny type string\n");
+            return;
+        }
+    } else {
+        fprintf(stdout, "Unknown command!\n");
+        return;
+    }
+
+    /* Make sure the file actually exists*/
+    if (access(inipath, F_OK)) {
+        perror("Unable to find ini file!\n");
+        return;
+    }
+
+    /* Declare config struct and parse the file with the specified handler*/
+    if (ini_parse(inipath, handler, &cf) < 0) {
+        perror("Unable to load ini file!\n");
+        return;
+    }
+
+    /* Convert config to player basically */
+    player.SID = cf.sid;
+    player.TID = cf.tid;
+
+    /* Make sure the loaded values are correct*/
+    loadSettings(&cf, &settings);
+
+    /* Create a path to the seed data based on the game version and in game settings */
+    const char* fp = SeedGetFilePath(settings);
+    if (access(fp, F_OK)) {
+        perror("Data files missing or not loaded properly!\n");
+        perror("Ensure that the 'data' fodler is in the same directory as your executable!\n");
+        return;
+    }
+
+    InitialSeed *seeds = SeedLoadInitial(fp, &len, None);
+
+    if(seeds == NULL) {
+        perror("Failed to load initial seed list");
+        free(seeds);
+        return;
+    }
+
+    if (wflag) {
+        wenc_node *HEAD = NULL;
+
+        /* Determine the encounter slot data path from game version and area*/
+        const char *encounter_data_path = LocationGetEncounterFilePath(settings.gv, at);
+
+        /* Load slot data in Slot struct array based on input path determined earlier*/
+        Slot *slots = LocationLoadEncounterSlots(entry, encounter_data_path);
+
+        if (slots == NULL) {
+            perror("Failed to load encounter slots");
+            free(slots);
+            return;
+        }
+
+        FilterGenerateWildEncountersFromSeedList(&HEAD, player, wildMethod, slots, et, wf, seeds, len, initAdvances, maxAdvances);
+        FilterPrintWEncounterList(HEAD);
+        FilterFreeWEncList(HEAD);
+        free(slots);
+
+    } else if (sflag) {
+        senc_node *HEAD = NULL;
+
+        FilterGenerateStaticEncounterFromSeedList(&HEAD, player, M1, sf, seeds, len, mon, initAdvances, maxAdvances);
+        FilterPrintSEncounterList(HEAD);
+
+        FilterFreeSEncList(HEAD);
+    } else {
+        fprintf(stderr, "Unkown error has occurred.");
+        return;
+    }
+    free(seeds);
+}
+
 int main(int argc, char** argv) {
-    if (argc < 2) {
+    if (argc < 3) {
         commandHelp();
         return EXIT_FAILURE;
     }
@@ -50,155 +439,6 @@ int main(int argc, char** argv) {
             return EXIT_SUCCESS;
         }
     }
-
-    char* path = "settings.ini";
-
-    /* Make sure the file actually exists*/
-    if (access(path, F_OK)) {
-        perror("Unable to find ini file!\n");
-        return EXIT_FAILURE;
-    }
-
-    /* Declare config struct and parse the file with the specified handler*/
-    Config cf;
-    if (ini_parse(path, handler, &cf) < 0) {
-        perror("Unable to load ini file!\n");
-        return EXIT_FAILURE;
-    }
-
-    /* Declare player struct */
-    Player player;
-
-    /* Declare setting enums to be used from config file */
-    Settings settings;
-
-    /* Convert config to player basically */
-    player.SID = cf.sid;
-    player.TID = cf.tid;
-
-    /* Make sure the loaded values are correct*/
-    loadSettings(&cf, &settings);
-
-    /* Search target */
-    Pokemon mon = pokemon[20]; // Spearow
-    Nature nat = natures[8]; // Impish
-    uint8_t level = 13;
-    uint32_t target_seed = 0xE585;
-
-    /* Declare the encounter type and the area where the encounter happens */
-    EncounterType encT = Grass;
-    AreaEntry at = LAND_AREA_MAP[55]; // Route 10
-
-    /* Create a path to the seed data based on the game version and in game settings */
-    const char* fp = SeedGetFilePath(settings);
-    if (access(fp, F_OK)) {
-        perror("Data files missing or not loaded properly!\n");
-        return EXIT_FAILURE;
-    }
-
-    /* Declare variable to store the amount of seeds that are going to be added to the seeds array*/
-    uint64_t len, s_len;
-    int index;
-
-    /* Load the seed data based on the file path determined earlier */
-    InitialSeed *seeds = SeedLoadInitial(fp, &len, None);
-
-    if(seeds == NULL) {
-        perror("Failed to load initial seed list");
-        free(seeds);
-        return EXIT_FAILURE;
-    }
-
-    /* Find the index of the target seed from the seed data file */
-    index = SeedFindIndex(seeds, target_seed, len);
-
-    if (index < 0) {
-        perror("Seed not found in data!");
-        return EXIT_FAILURE;
-    }
-
-    /* Declare and initialize the range of seeds to look thru (+/-) target index */
-    uint16_t range = 10;
-
-    /* Create an array of new seed structs from range input and copy the new range to s_len*/
-    InitialSeed *seedRange = SeedGetSeedRange(seeds, len, index, range, &s_len);
-    if(seedRange == NULL) {
-        perror("Failed to load new seed list");
-        free(seeds);
-        return EXIT_FAILURE;
-    }
-
-    /* Free the original total list of seeds */
-    free(seeds);
-
-    /* Determine the encounter slot data path from game version and area*/
-    const char *encounter_data_path = LocationGetEncounterFilePath(settings.gv, at.at);
-
-    /* Load slot data in Slot struct array based on input path determined earlier*/
-    Slot *slots = LocationLoadEncounterSlots(at, encounter_data_path);
-
-    if (slots == NULL) {
-        perror("Failed to load encounter slots");
-        free(slots);
-        return EXIT_FAILURE;
-    }
-
-    /* Declare a filter struct with values to search for while generating encounters */
-    WildFilter wf = {
-            mon.dex - 1,
-            level,
-            {1, 1},
-            {0},
-            {0},
-            {0},
-            {0},
-            {0},
-            {0},
-            {1, 1, 0},
-            {0, 0, 1},
-            {0}
-    };
-
-    /* IV Estimator struct where our only known values are the total stat, nature, level, and mon*/
-    IVEstimate target = {
-            mon,
-            nat,
-            level,
-            {34, 20, 14, 12, 13, 24},
-            {0}
-    };
-
-    /* This is probably really stupid, but it sets the nature array to search values*/
-    FilterApplyNatureToWild(nat, &wf);
-
-    /* Calculate the upper and lower bounds for each stat based on the estimate struct then add them into the filter*/
-    FilterApplyIVEstimateToWild(&target, &wf);
-
-    clock_t t;
-    t = clock();
-
-    /* Create the head node of a linked list to add encounters to */
-    wenc_node *head = NULL;
-
-    /* Declare and initialize search parameters*/
-    uint32_t init, max;
-    init = 0;
-    max = 100;
-
-    /* Generate some wild encounters */
-    FilterGenerateWildEncountersFromSeedList(&head, player, H1, slots, encT, wf, seedRange, s_len, init, max);
-
-    /* Print results of generated encounters from linked list*/
-    FilterPrintWEncounterList(head);
-
-    t = clock() - t;
-    double time_taken = (double)t/CLOCKS_PER_SEC;
-    fprintf(stdout, "\nCompleted in %f seconds\n", time_taken);
-
-    /* Free all the memory that was created */
-    FilterFreeWEncList(head);
-    free(seedRange);
-    free(slots);
 
     return EXIT_SUCCESS;
 }
@@ -219,6 +459,7 @@ void commandHelp() {
         for (size_t j = 0; j < _getSubCommandCount(commands[i].subcommands); j++) {
             fprintf(stdout, "   - %s\n", commands[i].subcommands[j]);
         }
+        fprintf(stdout, "\n");
     }
 }
 
@@ -241,6 +482,12 @@ void listHandler(int argc, char** argv) {
         /* bin list natures (3)*/
         PokemonListNatures();
     } else if (COMATCH(subcommand, LIST_SUB_COMMANDS[1])) {
+        PokemonListGenderStrings();
+    } else if (COMATCH(subcommand, LIST_SUB_COMMANDS[2])) {
+        PokemonListShinyTypes();
+    } else if (COMATCH(subcommand, LIST_SUB_COMMANDS[3])) {
+        PokemonListHiddenPowerTypes();
+    } else if (COMATCH(subcommand, LIST_SUB_COMMANDS[4])) {
         /* bin list locations grass (4) */
         if (argc < 4) {
             fprintf(stdout, "Missing encounter arguments. Encounter type required:\n");
@@ -261,7 +508,7 @@ void listHandler(int argc, char** argv) {
             fprintf(stdout, "unable to match location string string\n");
             return;
         }
-    } else if (COMATCH(subcommand, LIST_SUB_COMMANDS[2])) {
+    } else if (COMATCH(subcommand, LIST_SUB_COMMANDS[5])) {
         if (argc < 6) {
             /* bin list encounter grass 46 lg */
             fprintf(stdout, "Missing location arguments. Example command:\n");
