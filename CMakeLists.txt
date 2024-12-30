@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 
-project(Generation2LCRNG)
+project(Generation3LCRNG)
 
 set(CMAKE_C_STANDARD 11)
 
