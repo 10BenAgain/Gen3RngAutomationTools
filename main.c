@@ -15,7 +15,7 @@
 #define COMATCH(s, c) (!strcmp((s),(c)))
 #define COMMANDS_COUNT (sizeof(commands)/sizeof(commands[0]))
 
-size_t _getSubCommandCount(const char** sc);
+size_t getSubCommandCount(const char** sc);
 
 void listHandler(int argc, char** argv);
 void searchHandler(int argc, char** argv);
@@ -44,13 +44,6 @@ const char* SEARCH_SUBCOMMANDS[2] = {
     "wild"
 };
 
-const char* SEARCH_FLAGS[] = {
-    "-m", /* Method */
-    "-h", /* Hidden power filter */
-    "-s", /* Advances start point */
-    "-I", /* Settings profile path */
-    "-S", /* Seed list path */
-};
 
 Command commands[] = {
     { "list", listHandler, "List various related data", LIST_SUB_COMMANDS },
@@ -90,37 +83,38 @@ void searchHandler(int argc, char** argv) {
     long l;
     char* lend;
     char* inipath = "settings.ini";
+    char* optflags = ":thm:s:i:r:P:L:";
 
     Player player;
     Settings settings;
     Config cf;
 
-    uint16_t mon = 0;
-    uint32_t maxAdvances = 0;
+    uint16_t mon, range;
+    uint32_t maxAdvances;
     uint32_t initAdvances = 0;
+    uint32_t initSeed;
 
     uint64_t len, s_len;
 
     EncounterType et = Grass;
     AreaType at = LAND;
-    const AreaEntry* map = LAND_AREA_MAP;
+    const AreaEntry* map;
     AreaEntry entry;
-
-    Method wildMethod = H1;
-
-    int wflag = 0;
-    int sflag = 0;
 
     StaticFilter sf;
     WildFilter wf;
     IVEstimate est;
+
+    Method wildMethod = H1;
+
+    int wflag = 0, sflag = 0, rflag = 0, iflag = 0, tflag = 0, hflag = 0;
 
     if (argc < 18 && argc > 16) {
         searchMissingArgs(argv[2]);
         return;
     }
 
-    if (argc < 16 && argc >= 3) {
+    if (argc < 17 && argc >= 3) {
         searchMissingArgs(argv[2]);
         return;
     }
@@ -327,7 +321,7 @@ void searchHandler(int argc, char** argv) {
                 est.stats[i] = (uint16_t)l;
             }
         }
-        fprintf(stdout, "\n");
+
         FilterApplyIVEstimateToWild(&est, &wf);
 
         /*  Gender */
@@ -358,11 +352,86 @@ void searchHandler(int argc, char** argv) {
         return;
     }
 
+    int c;
+    /* https://stackoverflow.com/questions/18079340/using-getopt-in-c-with-non-option-arguments */
+    while (optind < argc) {
+        if ((c = getopt(argc, argv, optflags)) != -1) {
+            switch (c) {
+                case 't':
+                    tflag = 1;
+                    break;
+                case 'h':
+                    hflag = 1;
+                    break;
+                case 'm':
+                    if (COMATCH("H2", optarg)) {
+                        wildMethod = H2;
+                    } else if (COMATCH("H4", optarg)) {
+                        wildMethod = H4;
+                    } else {
+                        fprintf(stdout, "Unable to match wild method string. Use 'H2' or 'H4'. (Default: H1)\n");
+                        break;
+                    }
+                    break;
+                case 's':
+                    l = strtol(optarg, &lend, 10);
+                    if (lend == optarg) {
+                        fprintf(stdout, "Advance start point must be an integer. You entered: ('%s')\n", optarg);
+                        return;
+                    } else {
+                        initAdvances = (uint32_t)l;
+                    }
+                    break;
+                case 'i':
+                    l = strtol(optarg, &lend, 16);
+                    if (lend == optarg) {
+                        fprintf(stdout, "Initial seed must be an integer. You entered: ('%s')\n", optarg);
+                        return;
+                    } else {
+                        iflag = 1;
+                        initSeed = (uint32_t)l;
+                    }
+                    break;
+                case 'r':
+                    if (iflag) {
+                        rflag = 1;
+                        l = strtol(optarg, &lend, 10);
+                        if (lend == optarg) {
+                            fprintf(stdout, "Seed range must be an integer. You entered: ('%s')\n", optarg);
+                            return;
+                        } else {
+                            range = (uint16_t)l;
+                        }
+                    } else {
+                        fprintf(stderr, "Seed range '-r' requires initial seed arg! Make sure to include '-i [seed]' before using '-r [range]'\n");
+                        return;
+                    }
+                    break;
+                case 'P':
+                    inipath = optarg;
+                    break;
+                default:
+                    fprintf(stdout, "Unable to parse flags\n");
+                    return;
+            }
+        } else {
+            optind++;
+        }
+    }
+
+    if (initAdvances > maxAdvances) {
+        fprintf(stderr, "Initial advances '%d', is larger than the total advances '%d'. Exiting operation\n",
+                initAdvances, maxAdvances);
+        return;
+    }
+
     /* Make sure the file actually exists*/
     if (access(inipath, F_OK)) {
         perror("Unable to find ini file!\n");
         return;
     }
+
+    fprintf(stdout, "%s\n", inipath);
 
     /* Declare config struct and parse the file with the specified handler*/
     if (ini_parse(inipath, handler, &cf) < 0) {
@@ -381,11 +450,37 @@ void searchHandler(int argc, char** argv) {
     const char* fp = SeedGetFilePath(settings);
     if (access(fp, F_OK)) {
         perror("Data files missing or not loaded properly!\n");
-        perror("Ensure that the 'data' fodler is in the same directory as your executable!\n");
+        perror("Ensure that the 'data' folder is in the same directory as your executable!\n");
         return;
     }
 
-    InitialSeed *seeds = SeedLoadInitial(fp, &len, None);
+    void* seeds;
+    SeedOffset ofs = None;
+
+    if (hflag) {
+        ofs = HELD_A;
+    }
+
+    if (tflag) {
+        ofs = HELD_SELECT;
+    }
+
+    seeds = (InitialSeed* ) SeedLoadInitial(fp, &len, ofs);
+
+    if (rflag) {
+        int index;
+        if (range > (maxAdvances - initAdvances)) {
+            fprintf(stderr, "Seed range is greater than total advances!\n  Advances: %d\n  Range: %d\n", maxAdvances, range);
+            return;
+        }
+        if ((index = SeedFindIndex(seeds, initSeed, len) >= 0)) {
+            seeds = (InitialSeed* ) SeedGetSeedRange(seeds, len, index, range, &s_len);
+            len = s_len;
+        } else {
+            fprintf(stderr, "Unable to find initial seed in seed list.\n");
+            return;
+        }
+    }
 
     if(seeds == NULL) {
         perror("Failed to load initial seed list");
@@ -408,23 +503,37 @@ void searchHandler(int argc, char** argv) {
             return;
         }
 
-        FilterGenerateWildEncountersFromSeedList(&HEAD, player, wildMethod, slots, et, wf, seeds, len, initAdvances, maxAdvances);
+        if (iflag) {
+            FilterGenerateWildEncounter(&HEAD, player, wildMethod, slots, et, wf, initSeed, initAdvances, maxAdvances);
+        } else {
+            FilterGenerateWildEncountersFromSeedList(&HEAD, player, wildMethod, slots, et, wf, seeds, len, initAdvances, maxAdvances);
+        }
+
         FilterPrintWEncounterList(HEAD);
         FilterFreeWEncList(HEAD);
         free(slots);
+        free(seeds);
+        return;
 
     } else if (sflag) {
         senc_node *HEAD = NULL;
 
-        FilterGenerateStaticEncounterFromSeedList(&HEAD, player, M1, sf, seeds, len, mon, initAdvances, maxAdvances);
-        FilterPrintSEncounterList(HEAD);
+        if (iflag) {
+            FilterGenerateStaticEncounter(&HEAD, player, M1, sf, mon, initSeed, initAdvances, maxAdvances);
+        } else {
+            FilterGenerateStaticEncounterFromSeedList(&HEAD, player, M1, sf, seeds, len, mon, initAdvances, maxAdvances);
+        }
 
+        FilterPrintSEncounterList(HEAD);
         FilterFreeSEncList(HEAD);
+        free(seeds);
+        return;
+
     } else {
-        fprintf(stderr, "Unkown error has occurred.");
+        fprintf(stderr, "Unknown error has occurred.");
+        free(seeds);
         return;
     }
-    free(seeds);
 }
 
 int main(int argc, char** argv) {
@@ -443,7 +552,7 @@ int main(int argc, char** argv) {
     return EXIT_SUCCESS;
 }
 
-size_t _getSubCommandCount(const char** sc) {
+size_t getSubCommandCount(const char** sc) {
     size_t count = 0;
     while(sc[count] != NULL) {
         count++;
@@ -456,7 +565,7 @@ void commandHelp() {
     for (size_t i = 0; i < COMMANDS_COUNT; i++) {
         fprintf(stdout, "Name: '%s'\n", commands[i].command);
         fprintf(stdout, "Description: '%s'\nSubcommands:\n", commands[i].description);
-        for (size_t j = 0; j < _getSubCommandCount(commands[i].subcommands); j++) {
+        for (size_t j = 0; j < getSubCommandCount(commands[i].subcommands); j++) {
             fprintf(stdout, "   - %s\n", commands[i].subcommands[j]);
         }
         fprintf(stdout, "\n");
@@ -467,9 +576,6 @@ void listHandler(int argc, char** argv) {
     long l;
     char* lend;
 
-    /* List command */
-    const char* command = commands[0].command;
-
     if (argc < 3) {
         fprintf(stdout, "Error: 'list requires additional arguments.\n");
         fprintf(stdout, "   'list natures'\n");
@@ -479,7 +585,6 @@ void listHandler(int argc, char** argv) {
     const char* subcommand = argv[2];
 
     if (COMATCH(subcommand, LIST_SUB_COMMANDS[0])) {
-        /* bin list natures (3)*/
         PokemonListNatures();
     } else if (COMATCH(subcommand, LIST_SUB_COMMANDS[1])) {
         PokemonListGenderStrings();
@@ -488,7 +593,6 @@ void listHandler(int argc, char** argv) {
     } else if (COMATCH(subcommand, LIST_SUB_COMMANDS[3])) {
         PokemonListHiddenPowerTypes();
     } else if (COMATCH(subcommand, LIST_SUB_COMMANDS[4])) {
-        /* bin list locations grass (4) */
         if (argc < 4) {
             fprintf(stdout, "Missing encounter arguments. Encounter type required:\n");
             fprintf(stdout, "Available options:\n");
@@ -530,11 +634,11 @@ void listHandler(int argc, char** argv) {
         if (lend == map) {
             fprintf(stdout, "Encounter location index must be an integer!");
             return;
-        } else if (COMATCH(location, "grass") && l < 90) {
+        } else if (COMATCH(location, "grass") && l < MAPSIZE(LAND_AREA_MAP)) {
             LocationListMonsInLocation(gv, LAND_AREA_MAP[l]);
-        } else if (COMATCH(location, "water") && l < 50) {
+        } else if (COMATCH(location, "water") && l < MAPSIZE(WATER_AREA_MAP)) {
             LocationListMonsInLocation(gv, WATER_AREA_MAP[l]);
-        } else if (COMATCH(location, "rock") && l < 13) {
+        } else if (COMATCH(location, "rock") && l < MAPSIZE(ROCK_AREA_MAP)) {
             LocationListMonsInLocation(gv, ROCK_AREA_MAP[l]);
         } else {
             fprintf(stderr, "An unknown error occurred.\n");
