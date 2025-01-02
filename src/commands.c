@@ -16,7 +16,7 @@ void wildSearchExample() {
     fprintf(stdout, "   --search wild 1000 grass 55 Sandshrew Jolly 15 1 44 32 38 12 18 21 Male None\n");
 }
 
-static Flag searchFlags[7] = {
+static Flag searchFlags[8] = {
         { 't', "Hold Select",
                 "Use this flag to tell the program to add the held button 'Select' to the seed list. (1)", 0 },
         { 'h', "Hold A",
@@ -31,6 +31,8 @@ static Flag searchFlags[7] = {
                 "Use this flag to specify a range of seeds from your initial seed. This flag requires '-i' to be set FIRST. Example: '-i E585 -r 100'. This will create a seed list starting from 100 below E585 + 100 above E585", 1 },
         { 'P', "Settings Path",
                 "Use this flag to tell the program where to search for your settings .ini file. By default this is set to 'settings.ini'", 1},
+        { 'L', "Seed List",
+          "Use this flag to tell the program where to use a custom seed list for. The list must match the same format as the others from your data folder", 0}
 };
 
 void searchMissingArgs(const char* subCommand) {
@@ -76,6 +78,7 @@ void searchHandler(int argc, char** argv) {
     char* lend;
     char* inipath = "settings.ini";
     char* optflags = ":thm:s:i:r:P:L:";
+    char* customSeedPath = NULL;
 
     Player player;
     Settings settings;
@@ -100,7 +103,7 @@ void searchHandler(int argc, char** argv) {
 
     Method wildMethod = H1;
 
-    int wflag = 0, sflag = 0, rflag = 0, iflag = 0, tflag = 0, hflag = 0;
+    int wflag = 0, sflag = 0, rflag = 0, iflag = 0, tflag = 0, hflag = 0, lflag = 0;
 
     if (argc < 18 && argc > 16) {
         searchMissingArgs(argv[2]);
@@ -402,6 +405,10 @@ void searchHandler(int argc, char** argv) {
                 case 'P':
                     inipath = optarg;
                     break;
+                case 'L':
+                    customSeedPath = optarg;
+                    lflag = 1;
+                    break;
                 default:
                     fprintf(stdout, "Unable to parse flags\n");
                     return;
@@ -416,6 +423,8 @@ void searchHandler(int argc, char** argv) {
                 initAdvances, maxAdvances);
         return;
     }
+
+
 
     /* Make sure the file actually exists*/
     if (access(inipath, F_OK)) {
@@ -436,9 +445,14 @@ void searchHandler(int argc, char** argv) {
     /* Make sure the loaded values are correct*/
     loadSettings(&cf, &settings);
 
-    /* Create a path to the seed data based on the game version and in game settings */
-    const char* fp = SeedGetFilePath(settings);
-    if (access(fp, F_OK)) {
+    const char* seedPath = NULL;
+    if (lflag) {
+        seedPath = customSeedPath;
+    } else {
+        seedPath = SeedGetFilePath(settings);
+    }
+
+    if (access(seedPath, F_OK)) {
         perror("Data files missing or not loaded properly!\n");
         perror("Ensure that the 'data' folder is in the same directory as your executable!\n");
         return;
@@ -455,7 +469,7 @@ void searchHandler(int argc, char** argv) {
         ofs = HELD_SELECT;
     }
 
-    seeds = (InitialSeed* ) SeedLoadInitial(fp, &len, ofs);
+    seeds = (InitialSeed* ) SeedLoadInitial(seedPath, &len, ofs);
 
     if (rflag) {
         int index;
