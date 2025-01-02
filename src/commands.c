@@ -93,9 +93,10 @@ void searchHandler(int argc, char** argv) {
     const AreaEntry* map;
     AreaEntry entry;
 
-    StaticFilter sf;
-    WildFilter wf;
-    IVEstimate est;
+    /* Uninitialized structs are not guaranteed to have their parameters set to 0. I learned this the hard way */
+    StaticFilter sf = {0};
+    WildFilter wf = {0};
+    IVEstimate est = {0};
 
     Method wildMethod = H1;
 
@@ -178,7 +179,6 @@ void searchHandler(int argc, char** argv) {
                 est.stats[i] = (uint16_t)l;
             }
         }
-        fprintf(stdout, "\n");
         FilterApplyIVEstimateToStatic(&est, &sf);
 
         /*  Gender */
@@ -423,8 +423,6 @@ void searchHandler(int argc, char** argv) {
         return;
     }
 
-    fprintf(stdout, "%s\n", inipath);
-
     /* Declare config struct and parse the file with the specified handler*/
     if (ini_parse(inipath, handler, &cf) < 0) {
         perror("Unable to load ini file!\n");
@@ -505,6 +503,7 @@ void searchHandler(int argc, char** argv) {
         FilterFreeWEncList(HEAD);
         free(slots);
         free(seeds);
+
         return;
 
     } else if (sflag) {
