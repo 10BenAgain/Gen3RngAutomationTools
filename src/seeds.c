@@ -232,6 +232,3 @@ InitialSeed
     memcpy(seedR, &set[start], *newLen * sizeof(InitialSeed));
     return seedR;
 }
-
-
-
