@@ -1,64 +1,127 @@
-#include <math.h>
-#include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+#include <assert.h>
+#include "../include/commands.h"
+#include "../include/encounter_table.h"
+#include "../include/enums.h"
+#include "../include/filters.h"
+#include "../include/ivs.h"
+#include "../include/locations.h"
+#include "../include/pokemon.h"
+#include "../include/rng.h"
+#include "../include/seeds.h"
+#include "../include/settings.h"
 
-#define GBA_FPS 59.7275
-#define NDS_FPS 59.6555
-#define NEW3DS  59.8261
-#define OLD3DS  59.8261
-#define FPS60   60
+void TEST_CASE_0();
+void TEST_CASE_1();
 
-#define MINIMUM_INTRO_TIME      34744
-#define MAXIMUM_INTRO_TIME      75640
+void FTEST_IVsGetAllStatRanges_Function(IVEstimate* est);
+void FTEST_IVsFindBounds_Function(IVEstimate* est, uint8_t stats_e[6][2]);
 
-uint32_t adv2ms(double fr, uint32_t advances) {
-    return (uint32_t)(round( 1 / fr * 1000 * advances));
+#define VERIFY_STAT(expected, operation, result, message) if(!((expected) operation (result))) \
+    { fprintf(stderr, "%s: Expected (%d %s %d)\n", (message), (expected), #operation, (result)); }
+
+int main(void) {
+
+    TEST_CASE_0();
+    TEST_CASE_1();
+
+    fprintf(stdout, "All tests successful.\n");
+    return EXIT_SUCCESS;
 }
 
-void calculateInitialTimerNDS(uint32_t intro, uint32_t advances, uint32_t output[3]) {
-    if (intro < MINIMUM_INTRO_TIME || intro > MAXIMUM_INTRO_TIME) return;
+#define MAX_IV 31
+#define IV_DEFAULT -1
+void FTEST_IVsGetAllStatRanges_Function(IVEstimate* est) {
 
-    output[0] = intro;                           // Intro MS
+    IVsGetAllStatRanges(est);
 
-    uint32_t adv_ms = adv2ms(NDS_FPS, advances);
-    if (adv_ms <= 0) return;
+    for (size_t i = 0; i < 6; i++) {
+        for (size_t j = 0; j < 32; j++) {
 
-    output[1] = adv_ms;                         // Advances in MS
-    output[2] = output[0] + output[1];          // Total time
+            /* Ensure that each element is within the possible IV range with
+               -1 being the default value on estimate not matching range */
+
+            VERIFY_STAT(
+                est->rs[i][j],
+                >=,
+                IV_DEFAULT,
+                "Expected IV minimum value mismatched"
+            );
+
+            VERIFY_STAT(
+                est->rs[i][j],
+                <=,
+                MAX_IV,
+                "Expected IV maximum value mismatched"
+            );
+        }
+    }
 }
 
-void calculateTimerDifference(uint32_t first[3], uint32_t second[3], uint32_t output[3]) {
-    int i, a, t;
+void FTEST_IVsFindBounds_Function(IVEstimate* est, uint8_t stats_e[6][2]) {
+    int l, u;
 
-    i = first[0] - second[0];
-    a = first[1] - second[1];
-    t = first[2] - second[2];
+    IVsGetAllStatRanges(est);
 
-    output[0] = first[0] + i;
-    output[1] = first[1] + a;
-    output[2] = first[2] + t;
+    for (size_t i = 0; i < 6; i++) {
+
+        IVsFindBounds(est->rs[i], &l, &u);
+
+        /* Ensure that the lower and upper bounds calculated are between -1-31 */
+        assert(l >= IV_DEFAULT && "Lower bound calculation beyond minimum value of -1\n");
+        assert(u <= MAX_IV && "Lower bound calculation exceeded maximum value of 31\n");
+
+        /* Ensure that the lower and upper bounds from the estimate array match expected valeus */
+        assert(l == stats_e[i][0] && "Expected lower bound does not match calculated bound from IVsFindBounds\n");
+        assert(u == stats_e[i][1] && "Expected upper bound does not match calculated bound from IVsFindBounds\n");
+    }
 }
 
-int main() {
-    uint32_t intro, intro2, adv, adv2;
-    intro = 36000;
-    adv = 1600;
+void TEST_CASE_0() {
+    uint8_t SPEAROW_TEST_STAT_EXPECTED_0[6][2] = {
+            { 5, 12 },
+            { 0, 3 },
+            { 2, 9 },
+            { 8, 14 },
+            { 0, 7 },
+            { 7, 13 }
+    };
 
-    uint32_t out[3] = {0, 0, 0};
-    uint32_t out2[3] = {0, 0, 0};
-    uint32_t out3[3] = {0, 0, 0};
+    IVEstimate SPEAROW_TEST_ESTIMATE_0 = {
+            pokemon[20],
+            natures[8],
+            13,
+            { 34, 20, 14, 12, 13, 24 },
+            {0}
+    };
 
-    calculateInitialTimerNDS(intro, adv, out);
+    /* Test 0 [Spearow IV Check] */
+    FTEST_IVsGetAllStatRanges_Function(&SPEAROW_TEST_ESTIMATE_0);
+    FTEST_IVsFindBounds_Function(&SPEAROW_TEST_ESTIMATE_0, SPEAROW_TEST_STAT_EXPECTED_0);
+}
 
-    printf("%d/%d (%d)\n", out[0], out[1], out[2]);
+void TEST_CASE_1() {
+    uint8_t GOLBAT_TEST_STAT_EXPECTED_1[6][2] = {
+            { 29, 30 },
+            { 21, 22 },
+            { 26, 27 },
+            { 0, 0 },
+            { 0, 2 },
+            { 7, 9 }
+    };
 
-    intro2 = 35123;
-    adv2 = 1234;
+    IVEstimate GOLBAT_TEST_ESTIMATE_1 = {
+            pokemon[41],
+            natures[4],
+            46,
+            { 138, 96, 81, 64, 66, 91 },
+            {0}
+    };
 
-    calculateInitialTimerNDS(intro2, adv2, out2);
-    printf("%d/%d (%d)\n", out2[0], out2[1], out2[2]);
-    calculateTimerDifference(out, out2, out3);
-    printf("%d/%d (%d)\n", out3[0], out3[1], out3[2]);
-
-    return 0;
+    /* Test 1 [Golbat IV Check] */
+    FTEST_IVsGetAllStatRanges_Function(&GOLBAT_TEST_ESTIMATE_1);
+    FTEST_IVsFindBounds_Function(&GOLBAT_TEST_ESTIMATE_1, GOLBAT_TEST_STAT_EXPECTED_1);
 }
