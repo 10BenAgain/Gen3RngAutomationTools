@@ -10,8 +10,6 @@
 #include "enums.h"
 #include "ivs.h"
 
-
-
 typedef struct {
     uint32_t TID;
     uint32_t SID;
