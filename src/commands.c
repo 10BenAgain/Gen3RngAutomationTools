@@ -39,11 +39,15 @@ void searchMissingArgs(const char* subCommand) {
     if (COMATCH(subCommand, SEARCH_SUBCOMMANDS[0])) {
         staticSearchExample();
         return;
-    }
-    if (COMATCH(subCommand, SEARCH_SUBCOMMANDS[1])) {
+    } else if (COMATCH(subCommand, SEARCH_SUBCOMMANDS[1])) {
         wildSearchExample();
         return;
+    } else {
+        fprintf(stdout, "Unable to find command '%s'\n\n'", subCommand);
+        commandHelp();
+        return;
     }
+
 }
 
 size_t getSubCommandCount(const char** sc) {
@@ -110,7 +114,11 @@ void searchHandler(int argc, char** argv) {
         return;
     }
 
-    if (argc < 17 && argc >= 3) {
+    if (argc < 16 && argc >= 2) {
+        if (argc == 2) {
+            commandHelp();
+            return;
+        }
         searchMissingArgs(argv[2]);
         return;
     }
@@ -423,8 +431,6 @@ void searchHandler(int argc, char** argv) {
                 initAdvances, maxAdvances);
         return;
     }
-
-
 
     /* Make sure the file actually exists*/
     if (access(inipath, F_OK)) {
