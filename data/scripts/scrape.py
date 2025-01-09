@@ -5,7 +5,7 @@ import json
 
 # https://github.com/jscarfo11/Scripts/blob/master/help-others/ben/poke-script/main.py
 
-gen = 1
+gen = 3
 def main():
 
     # Create a new instance of the Firefox driver
@@ -38,7 +38,7 @@ def main():
         elif name == "Nidoran♂":
             name = "Nidoran-m"
         elif name == "Mr.":
-            name= "Mr-mime"
+            name = "Mr-mime"
         elif name == "Farfetch'd":
             name = "Farfetchd"
         elif name == "Castform":

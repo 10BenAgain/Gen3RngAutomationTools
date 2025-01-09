@@ -11,11 +11,11 @@ gr = {
     -1: "Unknown"
 }
 
-with open("pokemon-stats-and-abilites.json") as d:
+with open("pokemon-stats-gen1-abilites.json") as d:
     data = json.load(d)
 
 with open(results, "w") as f:
-    for i in range(151, 251):
+    for i in range(251, 386):
         index = data[str(i + 1)]
         name = index["name"]
         stats = '{' + (f"{int(index["HP"])}, "
@@ -30,7 +30,7 @@ with open(results, "w") as f:
         output = '{ ' + str(i + 1) + ', "' + name + '", ' + stats + ', ' + gender + ', "' + ability1 + '", ' + '"' + ability2 + '"' + ' },'
         f.write(output + '\n')
 
-for i in range(151, 251):
+for i in range(251, 386):
     index = data[str(i + 1)]
     name = index["name"]
     output = '"' + name.upper() + '"' + ':' + str(i) + ','
