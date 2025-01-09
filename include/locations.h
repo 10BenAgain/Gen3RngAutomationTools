@@ -19,8 +19,6 @@
 
 #define MAPSIZE(map) (sizeof(map)/sizeof(AreaEntry))
 
-extern const char* EncounterTypeStrings[3];
-
 typedef struct {
     AreaType at;
     const char *name;
@@ -40,7 +38,7 @@ typedef struct {
     const char *fn;
 } EncounterFileMap;
 
-static const AreaEntry LAND_AREA_MAP[89] = {
+static const AreaEntry LAND_AREA_MAP[96] = {
     { LAND, "Altering Cave (Default)", 0 },
     { LAND, "Altering Cave (Mystery Gift)", 1 },
     { LAND, "Altering Cave (Mystery Gift)", 2 },
@@ -130,6 +128,13 @@ static const AreaEntry LAND_AREA_MAP[89] = {
     { LAND, "Victory Road 3F", 86 },
     { LAND, "Viridian Forest", 87 },
     { LAND, "Water Path", 88 },
+    { LAND, "Tanoby Ruins Chamber - Monean", 89 },
+    { LAND, "Tanoby Ruins Chamber - Liptoo", 90 },
+    { LAND, "Tanoby Ruins Chamber - Weepeth", 91 },
+    { LAND, "Tanoby Ruins Chamber - Dilford", 92 },
+    { LAND, "Tanoby Ruins Chamber - Scufib", 93 },
+    { LAND, "Tanoby Ruins Chamber - Rixy", 94 },
+    { LAND, "Tanoby Ruins Chamber - Viapois", 95 },
 };
 
 static const AreaEntry WATER_AREA_MAP[49] = {
@@ -208,10 +213,19 @@ static const EncounterFileMap ENCOUNTER_MAPPING[] = {
         { LG, WATER,        "water" },
 };
 
+extern const char* EncounterTypeStrings[3];
+extern const char* UnownChambers[7];
+
+void LocationsListTanobyChamberStrings();
 void LocationListFromEncType(EncounterType et);
 void LocationListMonsInLocation(GameVersion gv, AreaEntry entry);
 
 const char *LocationGetEncounterFilePath(GameVersion gv, AreaType at);
+
+uint8_t LocationsCheckChamberString(const char* chamber);
+
 Slot *LocationLoadEncounterSlots(AreaEntry area, const char *fn);
+
+Chamber LocationsIndex2Chamber(uint8_t index);
 
 #endif

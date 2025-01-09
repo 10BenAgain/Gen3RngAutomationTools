@@ -202,22 +202,44 @@ void FilterGenerateWildEncounter(
             continue;
         }
 
-        RNGIncrementSeed(&current_seed, 2);
+        RNGIncrementSeed(&current_seed, 1);
 
-        if (CHECK_NATURE(filter, (enc->nature = (current_seed >> 16) % 25))) {
-            free(enc);
-            continue;
+        // Reverse Method 1 for Unown
+        if (enc->mon == 200) {
+            do {
+                RNGIncrementSeed(&current_seed, 1);
+                uint32_t second_half = current_seed >> 16;
+                RNGIncrementSeed(&current_seed, 1);
+                uint32_t first_half = current_seed >> 16;
+                enc->PID = (second_half << 16) | first_half;
+            } while ((enc->symbol = PokemonGetUnownSymbolChar(PokemonGetUnownLetter(enc->PID))) != filter.symbol);
+
+            if (enc->symbol != CHAMBER_SLOT_LOOKUP_TABLE[filter.chamber][enc->slot]) {
+                free(enc);
+                continue;
+            }
+
+            if (CHECK_NATURE(filter, (enc->nature = enc->PID % 25))) {
+                free(enc);
+                continue;
+            }
+
+        } else {
+            RNGIncrementSeed(&current_seed, 1);
+            if (CHECK_NATURE(filter, (enc->nature = (current_seed >> 16) % 25))) {
+                free(enc);
+                continue;
+            }
+            do
+            {
+                // PID re-roll https://docs.google.com/spreadsheets/d/1hCZznFa4cez3l2qx1DmYPbuB_dNGTqqCoaksZf-Q44s/edit?usp=sharing
+                RNGIncrementSeed(&current_seed, 1);
+                uint32_t second_half = current_seed >> 16;
+                RNGIncrementSeed(&current_seed, 1);
+                uint32_t first_half = current_seed >> 16;
+                enc->PID = (first_half << 16) | second_half;
+            } while (enc->PID % 25 != enc->nature);
         }
-
-        do
-        {
-            // PID re-roll https://docs.google.com/spreadsheets/d/1hCZznFa4cez3l2qx1DmYPbuB_dNGTqqCoaksZf-Q44s/edit?usp=sharing
-            RNGIncrementSeed(&current_seed, 1);
-            uint32_t second_half = current_seed >> 16;
-            RNGIncrementSeed(&current_seed, 1);
-            uint32_t first_half = current_seed >> 16;
-            enc->PID = (first_half << 16) | second_half;
-        } while (enc->PID % 25 != enc->nature);
 
         enc->shiny = PokemonIsShiny(enc->PID, pl.TID, pl.SID);
 
@@ -260,10 +282,10 @@ void FilterGenerateWildEncounter(
         enc->IVs[3] = ((current_seed >> 16) >> IV_SHIFT) & IV_MASK; // SpD
         enc->IVs[4] = ((current_seed>> 16) >> 2 * IV_SHIFT) & IV_MASK; // Spe
 
-        if (CHECK_IVS(enc, filter)) {
-            free(enc);
-            continue;
-        }
+//        if (CHECK_IVS(enc, filter)) {
+//            free(enc);
+//            continue;
+//        }
 
         enc->hp = HP[PokemonGetHPValue(enc->IVs)].type;
         enc->hp_pow = PokemonGetHP(enc->IVs);
@@ -338,15 +360,20 @@ FilterPrintWEncounterList(wenc_node* enc) {
     wenc_node* temp = NULL;
     temp = enc;
 
-    int i, c;
-    c = 0;
+    int i;
     fprintf(stdout, "Seed | Advances | Name | Slot | Level | PID | Nature | Ability | HP | Atk | Def | Spa | Spd | Spe | Shiny | HP | HP Power | Gender\n");
     fprintf(stdout, "-----------------------------------------------------------------------------------------------------------------------------------\n");
     while(temp != NULL) {
         Pokemon m = pokemon[temp->we.mon];
         fprintf(stdout, "%X | ", temp->we.seed);
         fprintf(stdout, "%d | ", temp->we.advances);
-        fprintf(stdout, "%s | ", m.name);
+
+        if (m.dex == 201) {
+            fprintf(stdout, "%s-(%c) | ", m.name, temp->we.symbol);
+        } else {
+            fprintf(stdout, "%s | ", m.name);
+        }
+
         fprintf(stdout, "%d | ", temp->we.slot);
         fprintf(stdout, "%d | ", temp->we.level);
         fprintf(stdout, "%X | ", temp->we.PID);
@@ -363,7 +390,6 @@ FilterPrintWEncounterList(wenc_node* enc) {
         fprintf(stdout, "| %s\n", PokemonGetGenderString(PokemonGetGender(temp->we.PID, m.gr)));
 
         temp = temp->next;
-        c++;
     }
 }
 

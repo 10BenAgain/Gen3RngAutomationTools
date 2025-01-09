@@ -1,11 +1,53 @@
-#include "../include/locations.h"
 #include <stdio.h>
+#include "../include/locations.h"
 
 const char* EncounterTypeStrings[3] = {
     "Grass",
     "Water",
     "Rock Smash"
 };
+
+const char* UnownChambers[7] = {
+    "Monean",
+    "Liptoo",
+    "Weepeth",
+    "Dilford",
+    "Scufib",
+    "Rixy",
+    "Viapois"
+};
+
+Chamber
+LocationsIndex2Chamber(uint8_t index) {
+    switch (index) {
+        case 89:
+            return MONEAN;
+        case 90:
+            return LIPTOO;
+        case 91:
+            return WEEPETH;
+        case 92:
+            return DILFORD;
+        case 93:
+            return SCUFIB;
+        case 94:
+            return RIXY;
+        case 95:
+            return VIAPOIS;
+        default:
+            return MONEAN;
+    }
+}
+
+uint8_t
+LocationsCheckChamberString(const char* chamber) {
+    for (size_t i = 0; i < sizeof(UnownChambers)/sizeof(UnownChambers[0]); i++) {
+        if (!strcmp(chamber, UnownChambers[i])) {
+            return 0;
+        }
+    }
+    return 1;
+}
 
 const char
 *get_enc_path(const char *folder, const char* file) {
@@ -179,5 +221,11 @@ void LocationListFromEncType(EncounterType et) {
 
     for (size_t i = 0; i < locations; i++) {
         fprintf(stdout, "%d | %s\n", map[i].index, map[i].name);
+    }
+}
+
+void LocationsListTanobyChamberStrings() {
+    for (size_t i = 0; i < sizeof(UnownChambers)/sizeof(UnownChambers[0]); i++) {
+        fprintf(stdout, "%s\n", UnownChambers[i]);
     }
 }

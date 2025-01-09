@@ -65,6 +65,37 @@ typedef enum {
     SuperRod
 } EncounterType;
 
+typedef enum {
+    Starters,
+    Fossils,
+    Gifts,
+    GameCorner,
+    Stationary,
+    Legends,
+    Events,
+    Roamers
+} Category;
+
+typedef enum {
+    MONEAN  = 0,
+    LIPTOO  = 1,
+    WEEPETH = 2,
+    DILFORD = 3,
+    SCUFIB  = 4,
+    RIXY    = 5,
+    VIAPOIS = 6
+} Chamber;
+
+typedef enum {
+    MaleOnly    = 0,
+    FemaleOnly  = 1,
+    Unknown     = 3,
+    F1M7        = 0x1F,
+    F1M3        = 0x40,
+    F1M1        = 0x1A,
+    F3M1        = 0x40,
+} GenderRatio;
+
 static EncounterType
 area2enc(AreaType at) {
     switch (at) {

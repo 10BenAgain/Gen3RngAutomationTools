@@ -16,7 +16,7 @@ void wildSearchExample() {
     fprintf(stdout, "   --search wild 1000 grass 55 Sandshrew Jolly 15 1 44 32 38 12 18 21 Male None\n");
 }
 
-static Flag searchFlags[8] = {
+static Flag searchFlags[9] = {
         { 't', "Hold Select",
                 "Use this flag to tell the program to add the held button 'Select' to the seed list. (1)", 0 },
         { 'h', "Hold A",
@@ -29,6 +29,8 @@ static Flag searchFlags[8] = {
                 "Use this flag to set a single initial seed to search for. By default, the program uses all possible seeds based on your settings file which becomes slower with higher max advances", 1 },
         { 'r', "Seed Range",
                 "Use this flag to specify a range of seeds from your initial seed. This flag requires '-i' to be set FIRST. Example: '-i E585 -r 100'. This will create a seed list starting from 100 below E585 + 100 above E585", 1 },
+        { 'y', "Unown Symbol",
+          "Use this flag to specify a specific Unown Symbol. Example '-y C' for C, '-y !' for !", 1 },
         { 'P', "Settings Path",
                 "Use this flag to tell the program where to search for your settings .ini file. By default this is set to 'settings.ini'", 1},
         { 'L', "Seed List",
@@ -81,7 +83,7 @@ void searchHandler(int argc, char** argv) {
     long l;
     char* lend;
     char* inipath = "settings.ini";
-    char* optflags = ":thm:s:i:r:P:L:";
+    char* optflags = ":thm:s:i:r:y:P:L:";
     char* customSeedPath = NULL;
 
     Player player;
@@ -107,7 +109,7 @@ void searchHandler(int argc, char** argv) {
 
     Method wildMethod = H1;
 
-    int wflag = 0, sflag = 0, rflag = 0, iflag = 0, tflag = 0, hflag = 0, lflag = 0;
+    int wflag = 0, sflag = 0, rflag = 0, iflag = 0, tflag = 0, hflag = 0, lflag = 0, yflag = 0;
 
     if (argc < 18 && argc > 16) {
         searchMissingArgs(argv[2]);
@@ -190,6 +192,7 @@ void searchHandler(int argc, char** argv) {
                 est.stats[i] = (uint16_t)l;
             }
         }
+
         FilterApplyIVEstimateToStatic(&est, &sf);
 
         /*  Gender */
@@ -230,8 +233,12 @@ void searchHandler(int argc, char** argv) {
         /* Area Entry first as to not check later */
         l = strtol(argv[5], &lend, 10);
         if (lend == argv[5]) {
-            fprintf(stdout, "Advances must be an integer\n");
+            fprintf(stdout, "Area value must be an integer\n");
             return;
+        }
+
+        if (l >= 89 && l <= 96) {
+            wf.chamber = LocationsIndex2Chamber(l);
         }
 
         /* Encounter Type */
@@ -410,6 +417,19 @@ void searchHandler(int argc, char** argv) {
                         return;
                     }
                     break;
+                case 'y':
+                    for (size_t i = 0; i < sizeof(unown)/sizeof(unown[0]); i++) {
+                        if (optarg[0] == unown[i].symbol) {
+                            wf.symbol = optarg[0];
+                            yflag = 1;
+                            break;
+                        }
+                    }
+                    if (!yflag) {
+                        fprintf(stderr, "Unable to match Unown symbol. Make sure input is a capital letter/char\n");
+                        return;
+                    }
+                    break;
                 case 'P':
                     inipath = optarg;
                     break;
@@ -554,7 +574,7 @@ void listHandler(int argc, char** argv) {
     if (argc < 3) {
         fprintf(stdout, "Error: 'list requires additional arguments.\n");
         fprintf(stdout, "   'list natures'\n");
-        fprintf(stdout, "   'list encounters grass'\n");
+        fprintf(stdout, "   'list locations grass'\n");
         return;
     }
     const char* subcommand = argv[2];
@@ -616,7 +636,7 @@ void listHandler(int argc, char** argv) {
         } else if (COMATCH(location, "rock") && l < MAPSIZE(ROCK_AREA_MAP)) {
             LocationListMonsInLocation(gv, ROCK_AREA_MAP[l]);
         } else {
-            fprintf(stderr, "An unknown error occurred.\n");
+            fprintf(stderr, "Specified area index was out of range of expected value!\n");
             return;
         }
     } else {

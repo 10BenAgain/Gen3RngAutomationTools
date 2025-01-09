@@ -16,7 +16,7 @@ typedef struct {
 } Player;
 
 typedef struct {
-    uint8_t mon;
+    uint16_t mon;
     uint32_t PID;
     uint8_t nature;
     uint8_t ability;
@@ -31,7 +31,7 @@ typedef struct {
 
 typedef struct {
     uint32_t PID;
-    uint8_t mon;
+    uint16_t mon;
     uint8_t nature;
     uint8_t ability;
     uint8_t IVs[6];
@@ -42,6 +42,8 @@ typedef struct {
     uint8_t shiny;
     uint32_t seed;
     uint32_t advances;
+    Chamber chamber;
+    char symbol;
 } WildEncounter;
 
 typedef struct SNode {
@@ -81,6 +83,8 @@ typedef struct {
     uint8_t gender[3]; // 0 = M , 1 = F, 2 = U
     uint8_t shiny[3]; // 0 = Square, 1 = Star, 2 = None
     uint8_t natures[25];
+    Chamber chamber;
+    char symbol;
 } WildFilter;
 
 void FilterApplyNatureToStatic(Nature nt, StaticFilter* filter);

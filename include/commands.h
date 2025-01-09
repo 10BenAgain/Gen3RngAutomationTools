@@ -57,7 +57,7 @@ static const char* SEARCH_SUBCOMMANDS[2] = {
         "wild"
 };
 
-static Flag searchFlags[8];
+static Flag searchFlags[9];
 
 static Command commands[] = {
         { "list", listHandler, "List various related data", LIST_SUB_COMMANDS },
