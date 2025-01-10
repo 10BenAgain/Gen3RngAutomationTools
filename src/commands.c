@@ -260,6 +260,33 @@ void searchHandler(int argc, char** argv) {
                 fprintf(stdout, "Area entry for Grass must be a number between 0-49\n");
                 return;
             }
+        } else if (COMATCH(argv[4], "old")) {
+            at = OLD;
+            if (l >= 0 && l <= MAPSIZE(OLD_ROD_AREA_MAP)) {
+                map = OLD_ROD_AREA_MAP;
+                entry = map[l];
+            } else {
+                fprintf(stdout, "Area entry for Grass must be a number between 0-49\n");
+                return;
+            }
+        } else if (COMATCH(argv[4], "good")) {
+            at = GOOD;
+            if (l >= 0 && l <= MAPSIZE(GOOD_ROD_AREA_MAP)) {
+                map = LAND_AREA_MAP;
+                entry = map[l];
+            } else {
+                fprintf(stdout, "Area entry for Grass must be a number between 0-49\n");
+                return;
+            }
+        } else if (COMATCH(argv[4], "super")) {
+            at = SUPER;
+            if (l >= 0 && l <= MAPSIZE(SUPER_ROD_AREA_MAP)) {
+                map = SUPER_ROD_AREA_MAP;
+                entry = map[l];
+            } else {
+                fprintf(stdout, "Area entry for Grass must be a number between 0-49\n");
+                return;
+            }
         } else if (COMATCH(argv[4], "rock")) {
             at = ROCKSMASH;
             if (l >= 0 && l <= MAPSIZE(ROCK_AREA_MAP)) {
@@ -574,7 +601,7 @@ void searchHandler(int argc, char** argv) {
 
 void listHandler(int argc, char** argv) {
     long l;
-    char* lend;
+    char *lend;
 
     if (argc < 3) {
         fprintf(stdout, "Error: 'list requires additional arguments.\n");
@@ -582,7 +609,7 @@ void listHandler(int argc, char** argv) {
         fprintf(stdout, "   'list locations grass'\n");
         return;
     }
-    const char* subcommand = argv[2];
+    const char *subcommand = argv[2];
 
     if (COMATCH(subcommand, LIST_SUB_COMMANDS[0])) {
         PokemonListNatures();
@@ -599,15 +626,24 @@ void listHandler(int argc, char** argv) {
             fprintf(stdout, "   'grass'\n");
             fprintf(stdout, "   'water'\n");
             fprintf(stdout, "   'rock'\n");
+            fprintf(stdout, "   'old'\n");
+            fprintf(stdout, "   'good'\n");
+            fprintf(stdout, "   'super'\n");
             return;
         }
-        const char* location = argv[3];
+        const char *location = argv[3];
         if (COMATCH(location, "grass")) {
             LocationListFromEncType(Grass);
         } else if (COMATCH(location, "water")) {
             LocationListFromEncType(Water);
         } else if (COMATCH(location, "rock")) {
             LocationListFromEncType(RockSmash);
+        } else if (COMATCH(location, "old")) {
+            LocationListFromEncType(OldRod);
+        } else if (COMATCH(location, "good")) {
+            LocationListFromEncType(GoodRod);
+        } else if (COMATCH(location, "super")) {
+            LocationListFromEncType(SuperRod);
         } else {
             fprintf(stdout, "unable to match location string string\n");
             return;
@@ -621,9 +657,9 @@ void listHandler(int argc, char** argv) {
             fprintf(stdout, "   'list encounter grass 46 fr'\n");
             return;
         }
-        const char* location = argv[3];
-        const char* map = argv[4];
-        const char* version = argv[5];
+        const char *location = argv[3];
+        const char *map = argv[4];
+        const char *version = argv[5];
 
         GameVersion gv = FR;
         if (COMATCH(version, "lg")) {
@@ -631,6 +667,7 @@ void listHandler(int argc, char** argv) {
         }
 
         l = strtol(map, &lend, 10);
+
         if (lend == map) {
             fprintf(stdout, "Encounter location index must be an integer!");
             return;
@@ -640,6 +677,12 @@ void listHandler(int argc, char** argv) {
             LocationListMonsInLocation(gv, WATER_AREA_MAP[l]);
         } else if (COMATCH(location, "rock") && l < MAPSIZE(ROCK_AREA_MAP)) {
             LocationListMonsInLocation(gv, ROCK_AREA_MAP[l]);
+        } else if (COMATCH(location, "old") && l < MAPSIZE(OLD_ROD_AREA_MAP)) {
+            LocationListMonsInLocation(gv, OLD_ROD_AREA_MAP[l]);
+        } else if (COMATCH(location, "good") && l < MAPSIZE(GOOD_ROD_AREA_MAP)) {
+            LocationListMonsInLocation(gv, GOOD_ROD_AREA_MAP[l]);
+        } else if (COMATCH(location, "super") && l < MAPSIZE(SUPER_ROD_AREA_MAP)) {
+            LocationListMonsInLocation(gv, SUPER_ROD_AREA_MAP[l]);
         } else {
             fprintf(stderr, "Specified area index was out of range of expected value!\n");
             return;

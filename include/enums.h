@@ -53,7 +53,10 @@ typedef enum {
 typedef enum {
     LAND,
     WATER,
-    ROCKSMASH
+    ROCKSMASH,
+    OLD,
+    GOOD,
+    SUPER
 } AreaType;
 
 typedef enum {

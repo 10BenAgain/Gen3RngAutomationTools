@@ -1,10 +1,13 @@
 #include <stdio.h>
 #include "../include/locations.h"
 
-const char* EncounterTypeStrings[3] = {
+const char* EncounterTypeStrings[6] = {
     "Grass",
     "Water",
     "Rock Smash"
+    "Old Rod",
+    "Good Rod",
+    "Super Rod"
 };
 
 const char* UnownChambers[7] = {
@@ -142,6 +145,15 @@ Slot *LocationLoadEncounterSlots(AreaEntry area, const char *fn) {
         case ROCKSMASH:
             s = ROCK_SLOTS;
             break;
+        case OLD:
+            s = OLD_ROD_SLOTS;
+            break;
+        case GOOD:
+            s = GOOD_ROD_SLOTS;
+            break;
+        case SUPER:
+            s = SUPER_ROD_SLOTS;
+            break;
         default:
             return NULL;
     }
@@ -186,6 +198,14 @@ void LocationListMonsInLocation(GameVersion gv, AreaEntry entry) {
             break;
         case ROCKSMASH:
             slot_count = ROCK_SLOTS;
+        case OLD:
+            slot_count = OLD_ROD_SLOTS;
+            break;
+        case GOOD:
+            slot_count = GOOD_ROD_SLOTS;
+            break;
+        case SUPER:
+            slot_count = SUPER_ROD_SLOTS;
             break;
     }
 
@@ -214,6 +234,18 @@ void LocationListFromEncType(EncounterType et) {
         case RockSmash:
             locations = MAPSIZE(ROCK_AREA_MAP);
             map = ROCK_AREA_MAP;
+            break;
+        case OldRod:
+            locations = MAPSIZE(OLD_ROD_AREA_MAP);
+            map = OLD_ROD_AREA_MAP;
+            break;
+        case GoodRod:
+            locations = MAPSIZE(GOOD_ROD_AREA_MAP);
+            map = GOOD_ROD_AREA_MAP;
+            break;
+        case SuperRod:
+            locations = MAPSIZE(SUPER_ROD_AREA_MAP);
+            map = SUPER_ROD_AREA_MAP;
             break;
         default:
             return;
