@@ -289,6 +289,78 @@ def read_write_land_slots(file_path, version: bool):
         writer.writerows(data)
 
 
+def read_write_old_rod_slots(file_path, version: bool):
+    path = "../LGENCSLOTS/old"
+    if version:
+        path = "../FRENCSLOTS/old"
+
+    data = []
+    with open(file_path, mode='r') as f:
+        csf = csv.reader(f)
+        next(csf, None)
+
+        for row in csf:
+            entry = [0]
+
+            for i in range(1, 5, 2):
+                lvl = row[i + 1].split(sep='-')
+                entry.extend([int(mons[row[i]]), int(lvl[0]), int(lvl[1]), i])
+
+            data.append(entry)
+
+    with open(path, 'w', newline='\n', encoding="utf-8") as file:
+        writer = csv.writer(file)
+        writer.writerows(data)
+
+
+def read_write_good_rod_slots(file_path, version: bool):
+    path = "../LGENCSLOTS/good"
+    if version:
+        path = "../FRENCSLOTS/good"
+
+    data = []
+    with open(file_path, mode='r') as f:
+        csf = csv.reader(f)
+        next(csf, None)
+
+        for row in csf:
+            entry = [0]
+
+            for i in range(1, 7, 2):
+                lvl = row[i + 1].split(sep='-')
+                entry.extend([int(mons[row[i]]), int(lvl[0]), int(lvl[1]), i])
+
+            data.append(entry)
+
+    with open(path, 'w', newline='\n', encoding="utf-8") as file:
+        writer = csv.writer(file)
+        writer.writerows(data)
+
+
+def read_write_super_rod_slots(file_path, version: bool):
+    path = "../LGENCSLOTS/super"
+    if version:
+        path = "../FRENCSLOTS/super"
+
+    data = []
+    with open(file_path, mode='r') as f:
+        csf = csv.reader(f)
+        next(csf, None)
+
+        for row in csf:
+            entry = [0]
+
+            for i in range(1, 11, 2):
+                lvl = row[i + 1].split(sep='-')
+                entry.extend([int(mons[row[i]]), int(lvl[0]), int(lvl[1]), i])
+
+            data.append(entry)
+
+    with open(path, 'w', newline='\n', encoding="utf-8") as file:
+        writer = csv.writer(file)
+        writer.writerows(data)
+
+
 def read_write_water_slots(file_path, version: bool):
     path = "../LGENCSLOTS/water"
     if version:
@@ -345,14 +417,32 @@ def create_all_files():
     fp_lg_smash = os.path.join(data_dir, 'lgrockenc.csv')
     fp_fr_smash = os.path.join(data_dir, 'frrockenc.csv')
 
-    read_write_land_slots(fp_fr_land, True)
-    read_write_land_slots(fp_lg_land, False)
+    fp_lg_old_rod = os.path.join(data_dir, 'lgoldrod.csv')
+    fp_fr_old_rod = os.path.join(data_dir, 'froldrod.csv')
 
-    read_write_water_slots(fp_fr_water, True)
-    read_write_water_slots(fp_lg_water, False)
+    fp_lg_good_rod = os.path.join(data_dir, 'lggoodrod.csv')
+    fp_fr_good_rod = os.path.join(data_dir, 'frgoodrod.csv')
 
-    read_write_rock_slots(fp_fr_smash, True)
-    read_write_rock_slots(fp_lg_smash, False)
+    fp_lg_super_rod = os.path.join(data_dir, 'lgsuperrod.csv')
+    fp_fr_super_rod = os.path.join(data_dir, 'frsuperrod.csv')
+
+    # read_write_land_slots(fp_fr_land, True)
+    # read_write_land_slots(fp_lg_land, False)
+    #
+    # read_write_water_slots(fp_fr_water, True)
+    # read_write_water_slots(fp_lg_water, False)
+    #
+    # read_write_rock_slots(fp_fr_smash, True)
+    # read_write_rock_slots(fp_lg_smash, False)
+
+    read_write_old_rod_slots(fp_lg_old_rod, False)
+    read_write_old_rod_slots(fp_fr_old_rod, True)
+
+    read_write_good_rod_slots(fp_lg_good_rod, False)
+    read_write_good_rod_slots(fp_fr_good_rod, True)
+
+    read_write_super_rod_slots(fp_lg_super_rod, False)
+    read_write_super_rod_slots(fp_fr_super_rod, True)
 
 
 def write_land_slot_C(file_path):
@@ -361,22 +451,17 @@ def write_land_slot_C(file_path):
         next(csf, None)
         count = 0
         for row in csf:
-            output = '{ ' + "ROCKSMASH, " + '"' + row[0] + '"' + ', ' + str(count) + ' },'
+            output = '{ ' + "GOOD, " + '"' + row[0] + '"' + ', ' + str(count) + ' },'
             count += 1
             print(output)
 
 
 if __name__ == '__main__':
-    #create_all_files()
+    create_all_files()
 
     # script_dir = os.path.dirname(os.path.abspath(__file__))
     # data_dir = os.path.join(script_dir, '..', 'raw')
     # sys.path.append(data_dir)
     #
-    # fp_lg_land = os.path.join(data_dir, 'lgrockenc.csv')
+    # fp_lg_land = os.path.join(data_dir, 'lgsuperrod.csv')
     # write_land_slot_C(fp_lg_land)
-
-    m = list(mons.keys())
-
-    for _ in m:
-        print(_.capitalize())
