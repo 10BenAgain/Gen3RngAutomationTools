@@ -282,10 +282,10 @@ void FilterGenerateWildEncounter(
         enc->IVs[3] = ((current_seed >> 16) >> IV_SHIFT) & IV_MASK; // SpD
         enc->IVs[4] = ((current_seed>> 16) >> 2 * IV_SHIFT) & IV_MASK; // Spe
 
-//        if (CHECK_IVS(enc, filter)) {
-//            free(enc);
-//            continue;
-//        }
+        if (CHECK_IVS(enc, filter)) {
+            free(enc);
+            continue;
+        }
 
         enc->hp = HP[PokemonGetHPValue(enc->IVs)].type;
         enc->hp_pow = PokemonGetHP(enc->IVs);
