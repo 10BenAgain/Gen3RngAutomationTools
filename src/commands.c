@@ -446,6 +446,11 @@ void searchHandler(int argc, char** argv) {
         }
     }
 
+    if (mon == 200 && yflag == 0) {
+        fprintf(stderr, "'-y' flag must be set to specify Unown letter!.");
+        return;
+    }
+
     if (initAdvances > maxAdvances) {
         fprintf(stderr, "Initial advances '%d', is larger than the total advances '%d'. Exiting operation\n",
                 initAdvances, maxAdvances);
