@@ -230,6 +230,7 @@ void FilterGenerateWildEncounter(
                 free(enc);
                 continue;
             }
+
             do
             {
                 // PID re-roll https://docs.google.com/spreadsheets/d/1hCZznFa4cez3l2qx1DmYPbuB_dNGTqqCoaksZf-Q44s/edit?usp=sharing
@@ -240,7 +241,6 @@ void FilterGenerateWildEncounter(
                 enc->PID = (first_half << 16) | second_half;
             } while (enc->PID % 25 != enc->nature);
         }
-
         enc->shiny = PokemonIsShiny(enc->PID, pl.TID, pl.SID);
 
         if (CHECK_SHINY(filter, enc->shiny)) {

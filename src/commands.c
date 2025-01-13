@@ -181,6 +181,12 @@ void searchHandler(int argc, char** argv) {
             return;
         }
 
+        /* If target mon only has one ability, search for both options */
+        if (COMATCH(pokemon[mon].ab1, pokemon[mon].ab1)) {
+            sf.ability[0] = 1;
+            sf.ability[1] = 1;
+        }
+
         /* Stats */
         char* inStats[6] = { argv[8], argv[9], argv[10], argv[11], argv[12], argv[13] };
         for (size_t i = 0; i < 6; i++) {
@@ -345,6 +351,11 @@ void searchHandler(int argc, char** argv) {
         } else {
             fprintf(stdout, "Ability must be an integer. (0 or 1)\n");
             return;
+        }
+
+        if (COMATCH(pokemon[mon].ab1, pokemon[mon].ab1)) {
+            wf.ability[0] = 1;
+            wf.ability[1] = 1;
         }
 
         /* Stats */
