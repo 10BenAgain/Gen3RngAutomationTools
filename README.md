@@ -1,8 +1,8 @@
 ## Description
-Cross-platform CLI tool for searching encounters in Pokemon Fire Red and Leaf Green. My goal was to learn more about the C programming language and to avoid having to use the Gen3SeedAssistant tool thru Wine on my Linux machine. 
+Cross-platform CLI tool for searching encounters in Pokémon Fire Red and Leaf Green. My goal was to learn more about the C programming language and to avoid having to use the Gen3SeedAssistant tool through Wine on my Linux machine. 
 
 ## Installation
-Minimal installation is required. Just extract the release files and run the program from your desired directory. There are two addional components that are required alongside the binary file, however. There is a `data` folder that must reside in the same directory as the binary and another `settings.ini` file that must be present as well. This will be briefly covered later. 
+Minimal installation is required. Just extract the release files and run the program from your desired directory. There are two additional components that are required alongside the binary file, however. There is a `data` folder that must reside in the same directory as the binary and another `settings.ini` file that must be present as well. This will be briefly covered later. 
 
 ## Building
 If you want to build this program from source, there are a couple of requirements.
@@ -23,15 +23,15 @@ If everything went smoothly, you should now be left with an executable `bin`
 There are only 3 commands available in this program:
 
 <pre><code>bin <span style="color: #19AC00">help</span>    <i><span style="color: #969696"># Prints all the commands, subcommands and available flags</span></i>
-bin <span style="color: #FF7609">list</span>    <i><span style="color: #969696"># List relevent data components for search</span></i>
+bin <span style="color: #FF7609">list</span>    <i><span style="color: #969696"># List relevant data components for search</span></i>
 bin <span style="color: #e28743">search</span>  <i><span style="color: #969696"># Searches for targets</span></i>
-</pre></code>
+</code></pre>
 
 ### <ins>List</ins> 
 The list will be used to get the proper values for searching location indexes. For example, to find the appropriate index for `Route 1` in a list of `Grass` areas in Fire Red, run 
 <pre><code>bin <span style="color: #FF7609">list</span> locations grass <span style="color: #FF5D42">fr</span></code></pre>
 For Leaf Green, run
-<pre><code>bin <span style="color: #FF7609">list</span> locations grass <span style="color: #599E00">lg</span></code></pre></code></pre>
+<pre><code>bin <span style="color: #FF7609">list</span> locations grass <span style="color: #599E00">lg</span></code></pre>
 
 Below is a list of available location options to list:
 ```bash
@@ -59,7 +59,7 @@ Other subcommands for `list` include:
 
 
 ### <ins>Search</ins>
-Searching requires many arguments and configurations. To simplify the process, the program will search possible __known__ farmed seed values based on the `settings.ini` values only. By default, the progam looks for a `settings.ini` file in its working directory that looks like this:
+Searching requires many arguments and configurations. To simplify the process, the program will search possible __known__ farmed seed values based on the `settings.ini` values only. By default, the program looks for a `settings.ini` file in its working directory that looks like this:
 ```ini
 [player]
 name=Ben            ; Currently unused, just for tracking profiles I guess
@@ -79,14 +79,14 @@ button=LA           ; LA, LR, or Help
 The listed possible options for each field are listed in the comments. To change the values, you will have to manually edit them in your favorite text editor. In the example shown above, the program will ONLY use seeds from a baked in seed list with matching settings and version. 
 > If you prefer to use a full set of custom seed lists, don't worry, there is a search flag available covered in the `flags` section later. 
 
-The `settings.ini` file also eliminates the need to pass in trainer data to the programs' arguments and you can create multiple 'profiles' for the program to use. Before continuing, make sure to edit this file with the desired information and trainer data.
+The `settings.ini` file also eliminates the need to pass in trainer data to the programs' arguments. You can create multiple 'profiles' for the program to use. Before continuing, make sure to edit this file with the desired information and trainer data.
 
 #### <ins>Static Search</ins>
 Searching for static encounters requires the following arguments:
 <pre><code>bin <span style="color: #e28743">search</span> <span style="color: #FEEB40">static</span> [Advances] [Pokemon] [Nature] [Level] [Ability] <span style="color: #2A8EC5">[HP] [ATK] [DEF] [SPA] [SPD] [SPE]</span> [Gender] [Shiny]
 </code></pre>
 
-> Ability argument takes an integer. Either 0 or 1 respectively. Since many Pokemon have the same ability for 0 and 1 (Bulbasaur only has Overgrow), if this is the case, the program will search for both.
+> Ability argument takes an integer. Either 0 or 1 respectively. Since many Pokémon have the same ability for 0 and 1 (Bulbasaur only has Overgrow), if this is the case, the program will search for both.
 
 Example:
 <pre><code>bin <span style="color: #e28743">search</span> <span style="color: #FEEB40">static</span> 1000 Bulbasaur Docile 5 1 <span style="color: #2A8EC5">19 11 10 12 12 10</span> Male None
@@ -103,17 +103,17 @@ Example:
 ### <ins>Flags</ins>
 Flags passed to the program must be added to the end of the search command to parsed correctly. (After the [Shiny] type is specified)
 
-| Flag  | Description | Args |
-| ------------- | ------------- | - |
-| 't'   | Adds an offset of 1 to seed list. (Holding Select)  | None  |
-| 'h'   | Adds an offset of 12 to seed list (Holding A)  | None | | -h |
-| 'm'   | Sets the wild search method. By default this is set to H1  | H2 or H4 |
-| 's'   | Sets the start point for advances. By defualt this is set to 0  | Number |
-| 'i'   | Tells the program to search on only one seed  | Number (Hex) |
-| 'r'   | Specify the seed 'range' to search by instead of entire list. __"-i"__ MUST be set first and must proceed this flag  | Number |
-| 'y'   | For searching Unowns, specify the symbol to filter  | Character |
-| 'P'   | Tells the program where to search for a settings.ini file | Path to File |
-| 'L'   | Tells the program where to search for a custom seed list | Path to File |
+| Flag  | Description                                                                                                         | Args |
+| ------------- |---------------------------------------------------------------------------------------------------------------------| - |
+| 't'   | Adds an offset of 1 to seed list. (Holding Select)                                                                  | None  |
+| 'h'   | Adds an offset of 12 to seed list (Holding A)                                                                       | None | | -h |
+| 'm'   | Sets the wild search method. By default this is set to H1                                                           | H2 or H4 |
+| 's'   | Sets the start point for advances. By default this is set to 0                                                      | Number |
+| 'i'   | Tells the program to search on only one seed                                                                        | Number (Hex) |
+| 'r'   | Specify the seed 'range' to search by instead of entire list. __"-i"__ MUST be set first and must proceed this flag | Number |
+| 'y'   | For searching Unowns, specify the symbol to filter                                                                  | Character |
+| 'P'   | Tells the program where to search for a settings.ini file                                                           | Path to File |
+| 'L'   | Tells the program where to search for a custom seed list                                                            | Path to File |
 
 #### <ins>Examples</ins>
 Using the 't' or 'h' flag
@@ -123,7 +123,7 @@ Using the 'm' flag
 <pre><code>bin <span style="color: #e28743">search</span> <span style="color: #7FBD81">wild</span> 1000 grass 37 Ditto Rash 30 1 <span style="color: #2A8EC5">75 41 37 42 30 41</span> None None -m H4</code></pre>
 Using the 's' flag
 <pre><code>bin <span style="color: #e28743">search</span> <span style="color: #7FBD81">wild</span> 1000 grass 37 Ditto Rash 30 1 <span style="color: #2A8EC5">75 41 37 42 30 41</span> None None -s 800</code></pre>
-> This will begin the search at advance 800 and stop 1000 so the resulting range will be 200 advances. By default the program will search all advances up to 1000 if this flag is not set.
+> This will begin the search at advance 800 and stop 1000 so the resulting range will be 200 advances. By default, the program will search all advances up to 1000 if this flag is not set.
 
 Using the 'i' flag
 <pre><code>bin <span style="color: #e28743">search</span> <span style="color: #7FBD81">wild</span> 1000 grass 37 Ditto Rash 30 1 <span style="color: #2A8EC5">75 41 37 42 30 41</span> None None -i 0xE585</code></pre>
