@@ -83,7 +83,7 @@ void searchHandler(int argc, char** argv) {
     long l;
     char* lend;
     char* inipath = "settings.ini";
-    char* optflags = ":thm:s:i:r:y:P:L:";
+    char* optflags = "thm:s:i:r:y:P:L:";
     char* customSeedPath = NULL;
 
     Player player;
@@ -125,19 +125,103 @@ void searchHandler(int argc, char** argv) {
         return;
     }
 
+#define SEARCH_START 2
+    int c;
+    /* https://stackoverflow.com/questions/18079340/using-getopt-in-c-with-non-option-arguments */
+    while ((c = getopt(argc - SEARCH_START, argv + SEARCH_START, optflags)) != -1) {
+        switch (c) {
+            case 't':
+                tflag = 1;
+                break;
+            case 'h':
+                hflag = 1;
+                break;
+            case 'm':
+                if (COMATCH("H2", optarg)) {
+                    wildMethod = H2;
+                } else if (COMATCH("H4", optarg)) {
+                    wildMethod = H4;
+                } else {
+                    fprintf(stdout, "Unable to match wild method string. Use 'H2' or 'H4'. (Default: H1)\n");
+                    break;
+                }
+                break;
+            case 's':
+                l = strtol(optarg, &lend, 10);
+                if (lend == optarg) {
+                    fprintf(stdout, "Advance start point must be an integer. You entered: ('%s')\n", optarg);
+                    return;
+                } else {
+                    initAdvances = (uint32_t)l;
+                }
+                break;
+            case 'i':
+                l = strtol(optarg, &lend, 16);
+                if (lend == optarg) {
+                    fprintf(stdout, "Initial seed must be an integer. You entered: ('%s')\n", optarg);
+                    return;
+                } else {
+                    iflag = 1;
+                    initSeed = (uint32_t)l;
+                    fprintf(stdout, "Seed flag set!\n");
+                }
+                break;
+            case 'r':
+                if (iflag) {
+                    rflag = 1;
+                    l = strtol(optarg, &lend, 10);
+                    if (lend == optarg) {
+                        fprintf(stdout, "Seed range must be an integer. You entered: ('%s')\n", optarg);
+                        return;
+                    } else {
+                        range = (uint16_t)l;
+                    }
+                } else {
+                    fprintf(stderr, "Seed range '-r' requires initial seed arg! Make sure to include '-i [seed]' before using '-r [range]'\n");
+                    return;
+                }
+                break;
+            case 'y':
+                for (size_t i = 0; i < sizeof(unown)/sizeof(unown[0]); i++) {
+                    if (optarg[0] == unown[i].symbol) {
+                        wf.symbol = optarg[0];
+                        yflag = 1;
+                        break;
+                    }
+                }
+                if (!yflag) {
+                    fprintf(stderr, "Unable to match Unown symbol. Make sure input is a capital letter/char\n");
+                    return;
+                }
+                break;
+            case 'P':
+                inipath = optarg;
+                break;
+            case 'L':
+                customSeedPath = optarg;
+                lflag = 1;
+                break;
+            default:
+                fprintf(stdout, "Unable to parse flags\n");
+                return;
+        }
+    }
+
+    int postFlags = SEARCH_START + optind;
+
     if (COMATCH(argv[2], SEARCH_SUBCOMMANDS[0])) {
         sflag = 1;
 
         /* Advances */
-        l = strtol(argv[3], &lend, 10);
-        if (lend == argv[3]) {
+        l = strtol(argv[postFlags], &lend, 10);
+        if (lend == argv[postFlags]) {
             fprintf(stdout, "Advances must be an integer\n");
             return;
         } else
             maxAdvances = (uint32_t)l;
 
         /* Pokemon */
-        int monDex = PokemonSearchIndex(argv[4]);
+        int monDex = PokemonSearchIndex(argv[++postFlags]);
         if (monDex >= 0) {
             mon = (uint32_t)monDex;
             est.mon = pokemon[mon];
@@ -147,7 +231,7 @@ void searchHandler(int argc, char** argv) {
         }
 
         /* Nature */
-        int natIndex = PokemonGetNatureIndex(argv[5]);
+        int natIndex = PokemonGetNatureIndex(argv[++postFlags]);
         if (natIndex >= 0) {
             Nature nat = natures[(uint32_t)natIndex];
             est.nt = nat;
@@ -158,8 +242,8 @@ void searchHandler(int argc, char** argv) {
         }
 
         /* Level */
-        l = strtol(argv[6], &lend, 10);
-        if (lend == argv[6]) {
+        l = strtol(argv[++postFlags], &lend, 10);
+        if (lend == argv[postFlags]) {
             fprintf(stdout, "Level must be an integer\n");
             return;
         } else {
@@ -168,8 +252,8 @@ void searchHandler(int argc, char** argv) {
         }
 
         /* Ability */
-        l = strtol(argv[7], &lend, 10);
-        if (lend == argv[7]) {
+        l = strtol(argv[++postFlags], &lend, 10);
+        if (lend == argv[postFlags]) {
             fprintf(stdout, "Ability must be an integer\n");
             return;
         } else if (l == 0) {
@@ -188,10 +272,9 @@ void searchHandler(int argc, char** argv) {
         }
 
         /* Stats */
-        char* inStats[6] = { argv[8], argv[9], argv[10], argv[11], argv[12], argv[13] };
         for (size_t i = 0; i < 6; i++) {
-            l = strtol(inStats[i], &lend, 10);
-            if (lend == inStats[i]) {
+            l = strtol(argv[++postFlags], &lend, 10);
+            if (lend == argv[postFlags]) {
                 fprintf(stdout, "Stat must be an integer\n");
                 return;
             } else {
@@ -202,11 +285,11 @@ void searchHandler(int argc, char** argv) {
         FilterApplyIVEstimateToStatic(&est, &sf);
 
         /*  Gender */
-        if (COMATCH(argv[14], GENDER_STRINGS[0])) {
+        if (COMATCH(argv[++postFlags], GENDER_STRINGS[0])) {
             sf.gender[0] = 1;
-        } else if (COMATCH(argv[14], GENDER_STRINGS[1])) {
+        } else if (COMATCH(argv[postFlags], GENDER_STRINGS[1])) {
             sf.gender[1] = 1;
-        } else if (COMATCH(argv[14], GENDER_STRINGS[2])) {
+        } else if (COMATCH(argv[postFlags], GENDER_STRINGS[2])) {
             sf.gender[2] = 1;
         } else {
             fprintf(stdout, "Unable to match input gender string\n");
@@ -214,11 +297,11 @@ void searchHandler(int argc, char** argv) {
         }
 
         /*  Shiny */
-        if (COMATCH(argv[15], SHINY_TYPES[0])) {
+        if (COMATCH(argv[++postFlags], SHINY_TYPES[0])) {
             sf.shiny[2] = 1;
-        } else if (COMATCH(argv[15], SHINY_TYPES[1])) {
+        } else if (COMATCH(argv[postFlags], SHINY_TYPES[1])) {
             sf.shiny[1] = 1;
-        } else if (COMATCH(argv[15], SHINY_TYPES[2])) {
+        } else if (COMATCH(argv[postFlags], SHINY_TYPES[2])) {
             sf.shiny[0] = 1;
         } else {
             fprintf(stdout, "Unable to match input shiny type string\n");
@@ -229,16 +312,17 @@ void searchHandler(int argc, char** argv) {
         wflag = 1;
 
         /* Advances */
-        l = strtol(argv[3], &lend, 10);
-        if (lend == argv[3]) {
+        l = strtol(argv[postFlags], &lend, 10);
+        if (lend == argv[postFlags]) {
             fprintf(stdout, "Advances must be an integer\n");
             return;
         } else
             maxAdvances = (uint32_t)l;
 
+        postFlags++;
         /* Area Entry first as to not check later */
-        l = strtol(argv[5], &lend, 10);
-        if (lend == argv[5]) {
+        l = strtol(argv[++postFlags], &lend, 10);
+        if (lend == argv[postFlags]) {
             fprintf(stdout, "Area value must be an integer\n");
             return;
         }
@@ -248,7 +332,7 @@ void searchHandler(int argc, char** argv) {
         }
 
         /* Encounter Type */
-        if (COMATCH(argv[4], "grass")) {
+        if (COMATCH(argv[--postFlags], "grass")) {
             at = LAND;
             if (l >= 0 && l <= MAPSIZE(LAND_AREA_MAP)) {
                 map = LAND_AREA_MAP;
@@ -257,7 +341,7 @@ void searchHandler(int argc, char** argv) {
                 fprintf(stdout, "Area entry for Grass must be a number between 0-89\n");
                 return;
             }
-        } else if (COMATCH(argv[4], "water")) {
+        } else if (COMATCH(argv[postFlags], "water")) {
             at = WATER;
             if (l >= 0 && l <= MAPSIZE(WATER_AREA_MAP)) {
                 map = WATER_AREA_MAP;
@@ -266,7 +350,7 @@ void searchHandler(int argc, char** argv) {
                 fprintf(stdout, "Area entry for Grass must be a number between 0-49\n");
                 return;
             }
-        } else if (COMATCH(argv[4], "old")) {
+        } else if (COMATCH(argv[postFlags], "old")) {
             at = OLD;
             if (l >= 0 && l <= MAPSIZE(OLD_ROD_AREA_MAP)) {
                 map = OLD_ROD_AREA_MAP;
@@ -275,7 +359,7 @@ void searchHandler(int argc, char** argv) {
                 fprintf(stdout, "Area entry for Grass must be a number between 0-49\n");
                 return;
             }
-        } else if (COMATCH(argv[4], "good")) {
+        } else if (COMATCH(argv[postFlags], "good")) {
             at = GOOD;
             if (l >= 0 && l <= MAPSIZE(GOOD_ROD_AREA_MAP)) {
                 map = LAND_AREA_MAP;
@@ -284,7 +368,7 @@ void searchHandler(int argc, char** argv) {
                 fprintf(stdout, "Area entry for Grass must be a number between 0-49\n");
                 return;
             }
-        } else if (COMATCH(argv[4], "super")) {
+        } else if (COMATCH(argv[postFlags], "super")) {
             at = SUPER;
             if (l >= 0 && l <= MAPSIZE(SUPER_ROD_AREA_MAP)) {
                 map = SUPER_ROD_AREA_MAP;
@@ -293,7 +377,7 @@ void searchHandler(int argc, char** argv) {
                 fprintf(stdout, "Area entry for Grass must be a number between 0-49\n");
                 return;
             }
-        } else if (COMATCH(argv[4], "rock")) {
+        } else if (COMATCH(argv[postFlags], "rock")) {
             at = ROCKSMASH;
             if (l >= 0 && l <= MAPSIZE(ROCK_AREA_MAP)) {
                 map = ROCK_AREA_MAP;
@@ -306,9 +390,9 @@ void searchHandler(int argc, char** argv) {
             fprintf(stdout, "Unable to match encounter type to input string.\n");
             return;
         }
-
+        postFlags++;
         /* Pokemon */
-        int monDex = PokemonSearchIndex(argv[6]);
+        int monDex = PokemonSearchIndex(argv[++postFlags]);
         if (monDex >= 0) {
             mon = (uint32_t)monDex;
             wf.mon = mon;
@@ -319,7 +403,7 @@ void searchHandler(int argc, char** argv) {
         }
 
         /* Nature */
-        int natIndex = PokemonGetNatureIndex(argv[7]);
+        int natIndex = PokemonGetNatureIndex(argv[++postFlags]);
         if (natIndex >= 0) {
             Nature nat = natures[(uint32_t)natIndex];
             est.nt = nat;
@@ -330,8 +414,8 @@ void searchHandler(int argc, char** argv) {
         }
 
         /* Level */
-        l = strtol(argv[8], &lend, 10);
-        if (lend == argv[8]) {
+        l = strtol(argv[++postFlags], &lend, 10);
+        if (lend == argv[postFlags]) {
             fprintf(stdout, "Level must be an integer\n");
             return;
         } else {
@@ -340,8 +424,8 @@ void searchHandler(int argc, char** argv) {
         }
 
         /* Ability */
-        l = strtol(argv[9], &lend, 10);
-        if (lend == argv[9]) {
+        l = strtol(argv[++postFlags], &lend, 10);
+        if (lend == argv[postFlags]) {
             fprintf(stdout, "Ability must be an integer\n");
             return;
         } else if (l == 0) {
@@ -359,10 +443,9 @@ void searchHandler(int argc, char** argv) {
         }
 
         /* Stats */
-        char* inStats[6] = { argv[10], argv[11], argv[12], argv[13], argv[14], argv[15] };
         for (size_t i = 0; i < 6; i++) {
-            l = strtol(inStats[i], &lend, 10);
-            if (lend == inStats[i]) {
+            l = strtol(argv[++postFlags], &lend, 10);
+            if (lend == argv[postFlags]) {
                 fprintf(stdout, "Stat must be an integer\n");
                 return;
             } else {
@@ -373,11 +456,11 @@ void searchHandler(int argc, char** argv) {
         FilterApplyIVEstimateToWild(&est, &wf);
 
         /*  Gender */
-        if (COMATCH(argv[16], GENDER_STRINGS[0])) {
+        if (COMATCH(argv[++postFlags], GENDER_STRINGS[0])) {
             wf.gender[0] = 1;
-        } else if (COMATCH(argv[16], GENDER_STRINGS[1])) {
+        } else if (COMATCH(argv[postFlags], GENDER_STRINGS[1])) {
             wf.gender[1] = 1;
-        } else if (COMATCH(argv[16], GENDER_STRINGS[2])) {
+        } else if (COMATCH(argv[postFlags], GENDER_STRINGS[2])) {
             wf.gender[2] = 1;
         } else {
             fprintf(stdout, "Unable to match input gender string\n");
@@ -385,11 +468,11 @@ void searchHandler(int argc, char** argv) {
         }
 
         /*  Shiny */
-        if (COMATCH(argv[17], SHINY_TYPES[0])) {
+        if (COMATCH(argv[++postFlags], SHINY_TYPES[0])) {
             wf.shiny[2] = 1;
-        } else if (COMATCH(argv[17], SHINY_TYPES[1])) {
+        } else if (COMATCH(argv[postFlags], SHINY_TYPES[1])) {
             wf.shiny[1] = 1;
-        } else if (COMATCH(argv[17], SHINY_TYPES[2])) {
+        } else if (COMATCH(argv[postFlags], SHINY_TYPES[2])) {
             wf.shiny[0] = 1;
         } else {
             fprintf(stdout, "Unable to match input shiny type string\n");
@@ -398,90 +481,6 @@ void searchHandler(int argc, char** argv) {
     } else {
         fprintf(stdout, "Unknown command!\n");
         return;
-    }
-
-    int c;
-    /* https://stackoverflow.com/questions/18079340/using-getopt-in-c-with-non-option-arguments */
-    while (optind < argc) {
-        if ((c = getopt(argc, argv, optflags)) != -1) {
-            switch (c) {
-                case 't':
-                    tflag = 1;
-                    break;
-                case 'h':
-                    hflag = 1;
-                    break;
-                case 'm':
-                    if (COMATCH("H2", optarg)) {
-                        wildMethod = H2;
-                    } else if (COMATCH("H4", optarg)) {
-                        wildMethod = H4;
-                    } else {
-                        fprintf(stdout, "Unable to match wild method string. Use 'H2' or 'H4'. (Default: H1)\n");
-                        break;
-                    }
-                    break;
-                case 's':
-                    l = strtol(optarg, &lend, 10);
-                    if (lend == optarg) {
-                        fprintf(stdout, "Advance start point must be an integer. You entered: ('%s')\n", optarg);
-                        return;
-                    } else {
-                        initAdvances = (uint32_t)l;
-                    }
-                    break;
-                case 'i':
-                    l = strtol(optarg, &lend, 16);
-                    if (lend == optarg) {
-                        fprintf(stdout, "Initial seed must be an integer. You entered: ('%s')\n", optarg);
-                        return;
-                    } else {
-                        iflag = 1;
-                        initSeed = (uint32_t)l;
-                    }
-                    break;
-                case 'r':
-                    if (iflag) {
-                        rflag = 1;
-                        l = strtol(optarg, &lend, 10);
-                        if (lend == optarg) {
-                            fprintf(stdout, "Seed range must be an integer. You entered: ('%s')\n", optarg);
-                            return;
-                        } else {
-                            range = (uint16_t)l;
-                        }
-                    } else {
-                        fprintf(stderr, "Seed range '-r' requires initial seed arg! Make sure to include '-i [seed]' before using '-r [range]'\n");
-                        return;
-                    }
-                    break;
-                case 'y':
-                    for (size_t i = 0; i < sizeof(unown)/sizeof(unown[0]); i++) {
-                        if (optarg[0] == unown[i].symbol) {
-                            wf.symbol = optarg[0];
-                            yflag = 1;
-                            break;
-                        }
-                    }
-                    if (!yflag) {
-                        fprintf(stderr, "Unable to match Unown symbol. Make sure input is a capital letter/char\n");
-                        return;
-                    }
-                    break;
-                case 'P':
-                    inipath = optarg;
-                    break;
-                case 'L':
-                    customSeedPath = optarg;
-                    lflag = 1;
-                    break;
-                default:
-                    fprintf(stdout, "Unable to parse flags\n");
-                    return;
-            }
-        } else {
-            optind++;
-        }
     }
 
     if (mon == 200 && yflag == 0) {
