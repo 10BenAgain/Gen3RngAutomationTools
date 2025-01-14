@@ -101,7 +101,7 @@ Example:
 <pre><code>bin <span style="color: #e28743">search</span> <span style="color: #7FBD81">wild</span> 1000 grass 37 Ditto Rash 30 1 <span style="color: #2A8EC5">75 41 37 42 30 41</span> None None</code></pre>
 
 ### <ins>Flags</ins>
-Flags passed to the program must be added to the end of the search command to parsed correctly. (After the [Shiny] type is specified)
+Flags passed to the program must be added to the after the search subcommand. (Wild or Static)
 
 | Flag  | Description                                                                                                         | Args |
 | ------------- |---------------------------------------------------------------------------------------------------------------------| - |
@@ -117,32 +117,32 @@ Flags passed to the program must be added to the end of the search command to pa
 
 #### <ins>Examples</ins>
 Using the 't' or 'h' flag
-<pre><code>bin <span style="color: #e28743">search</span> <span style="color: #7FBD81">wild</span> 1000 grass 37 Ditto Rash 30 1 <span style="color: #2A8EC5">75 41 37 42 30 41</span> None None -t</code></pre>
-<pre><code>bin <span style="color: #e28743">search</span> <span style="color: #7FBD81">wild</span> 1000 grass 37 Ditto Rash 30 1 <span style="color: #2A8EC5">75 41 37 42 30 41</span> None None -h</code></pre>
+<pre><code>bin <span style="color: #e28743">search</span> <span style="color: #7FBD81">wild</span> -t 1000 grass 37 Ditto Rash 30 1 <span style="color: #2A8EC5">75 41 37 42 30 41</span> None None </code></pre>
+<pre><code>bin <span style="color: #e28743">search</span> <span style="color: #7FBD81">wild</span> -h 1000 grass 37 Ditto Rash 30 1 <span style="color: #2A8EC5">75 41 37 42 30 41</span> None None </code></pre>
 Using the 'm' flag
-<pre><code>bin <span style="color: #e28743">search</span> <span style="color: #7FBD81">wild</span> 1000 grass 37 Ditto Rash 30 1 <span style="color: #2A8EC5">75 41 37 42 30 41</span> None None -m H4</code></pre>
+<pre><code>bin <span style="color: #e28743">search</span> <span style="color: #7FBD81">wild</span> -m H4 1000 grass 37 Ditto Rash 30 1 <span style="color: #2A8EC5">75 41 37 42 30 41</span> None None</code></pre>
 Using the 's' flag
-<pre><code>bin <span style="color: #e28743">search</span> <span style="color: #7FBD81">wild</span> 1000 grass 37 Ditto Rash 30 1 <span style="color: #2A8EC5">75 41 37 42 30 41</span> None None -s 800</code></pre>
+<pre><code>bin <span style="color: #e28743">search</span> <span style="color: #7FBD81">wild</span> -s 800 1000 grass 37 Ditto Rash 30 1 <span style="color: #2A8EC5">75 41 37 42 30 41</span> None None</code></pre>
 > This will begin the search at advance 800 and stop 1000 so the resulting range will be 200 advances. By default, the program will search all advances up to 1000 if this flag is not set.
 
 Using the 'i' flag
-<pre><code>bin <span style="color: #e28743">search</span> <span style="color: #7FBD81">wild</span> 1000 grass 37 Ditto Rash 30 1 <span style="color: #2A8EC5">75 41 37 42 30 41</span> None None -i 0xE585</code></pre>
+<pre><code>bin <span style="color: #e28743">search</span> <span style="color: #7FBD81">wild</span> -i 0xE585 1000 grass 37 Ditto Rash 30 1 <span style="color: #2A8EC5">75 41 37 42 30 41</span> None None </code></pre>
 > Instead of using the entire seed list for the given settings.ini parameters, searches with an initial seed of the one provided (0xE585) and ignores all the rest
 
 Using the 'r' flag
-<pre><code>bin <span style="color: #e28743">search</span> <span style="color: #7FBD81">wild</span> 1000 grass 37 Ditto Rash 30 1 <span style="color: #2A8EC5">75 41 37 42 30 41</span> None None -i 0xE585 -r 50</code></pre>
+<pre><code>bin <span style="color: #e28743">search</span> <span style="color: #7FBD81">wild</span> -i 0xE585 -r 50 1000 grass 37 Ditto Rash 30 1 <span style="color: #2A8EC5">75 41 37 42 30 41</span> None None </code></pre>
 > This flag REQUIRES the -i flag to be set BEFORE it. Essentially this will search your active seed list for the passed seed (0xE585) and make sure it exists. If yes, a new seed list will be generated with 50 seeds below the target and 50 seed above the target. This is meant to decrease the processing time by not searching every single possible known seed. 
 
 Using the 'y' flag
-<pre><code>bin <span style="color: #e28743">search</span> <span style="color: #7FBD81">wild</span> search wild 1000 grass 90 Unown Relaxed <span style="color: #2A8EC5">25 0 64 44 35 47 33 28</span> None None -y C </code></pre>
+<pre><code>bin <span style="color: #e28743">search</span> <span style="color: #7FBD81">wild</span> -y C 1000 grass 90 Unown Relaxed <span style="color: #2A8EC5">25 0 64 44 35 47 33 28</span> None None </code></pre>
 > Since Unown's are handled slightly differently, a flag is required to filter further into the Unown symbol if needed. In the example above, the program will search only for Unown-C
 
 Using the 'P' flag
-<pre><code>bin <span style="color: #e28743">search</span> <span style="color: #7FBD81">wild</span> 1000 grass 37 Ditto Rash 30 1 <span style="color: #2A8EC5">75 41 37 42 30 41</span> None None -P C:\Users\RNG\settings2.ini</code></pre>
+<pre><code>bin <span style="color: #e28743">search</span> <span style="color: #7FBD81">wild</span> -P C:\Users\RNG\settings2.ini 1000 grass 37 Ditto Rash 30 1 <span style="color: #2A8EC5">75 41 37 42 30 41</span> None None</code></pre>
 > Settings must match the structure as described the beginning of the search section
 
 Using the 'L' flag
-<pre><code>bin <span style="color: #e28743">search</span> <span style="color: #7FBD81">wild</span> 1000 grass 37 Ditto Rash 30 1 <span style="color: #2A8EC5">75 41 37 42 30 41</span> None None -P C:\Users\RNG\MySeedList.txt</code></pre>
+<pre><code>bin <span style="color: #e28743">search</span> <span style="color: #7FBD81">wild</span> -P C:\Users\RNG\MySeedList.txt 1000 grass 37 Ditto Rash 30 1 <span style="color: #2A8EC5">75 41 37 42 30 41</span> None None</code></pre>
 To use a custom list of seeds, you will need to create one. The structure is very simple and looks like this:
 
 ```
