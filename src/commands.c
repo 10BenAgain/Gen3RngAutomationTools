@@ -163,7 +163,6 @@ void searchHandler(int argc, char** argv) {
                 } else {
                     iflag = 1;
                     initSeed = (uint32_t)l;
-                    fprintf(stdout, "Seed flag set!\n");
                 }
                 break;
             case 'r':
