@@ -7,3 +7,6 @@ external/
 .vscode/
 .idea/
 
+# Scripts and Raw data
+data/raw/
+data/scripts/
