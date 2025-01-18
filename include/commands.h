@@ -52,9 +52,10 @@ static const char* LIST_SUB_COMMANDS[7] = {
         NULL
 };
 
-static const char* SEARCH_SUBCOMMANDS[2] = {
+static const char* SEARCH_SUBCOMMANDS[3] = {
         "static",
-        "wild"
+        "wild",
+        NULL
 };
 
 static Flag searchFlags[9];
