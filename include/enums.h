@@ -95,8 +95,8 @@ typedef enum {
     Unknown     = 3,
     F1M7        = 0x1F,
     F1M3        = 0x40,
-    F1M1        = 0x1A,
-    F3M1        = 0x40,
+    F1M1        = 0x7F,
+    F3M1        = 0xBF,
 } GenderRatio;
 
 static EncounterType

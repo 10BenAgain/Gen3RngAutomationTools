@@ -1,4 +1,5 @@
 #include "../include/filters.h"
+#include <stdint.h>
 #include <stdio.h>
 
 #define CHECK_ABILITY(f, a) ((f).ability[a] != 1)
@@ -196,7 +197,6 @@ void FilterGenerateWildEncounter(
         }
 
         enc->mon = slots[enc->slot].mon;
-
         if (enc->mon != filter.mon){
             free(enc);
             continue;
@@ -226,7 +226,8 @@ void FilterGenerateWildEncounter(
 
         } else {
             RNGIncrementSeed(&current_seed, 1);
-            if (CHECK_NATURE(filter, (enc->nature = (current_seed >> 16) % 25))) {
+            enc->nature = (current_seed >> 16) % 25;
+            if (CHECK_NATURE(filter, enc->nature)) {
                 free(enc);
                 continue;
             }
@@ -250,7 +251,8 @@ void FilterGenerateWildEncounter(
 
         Pokemon poke = pokemon[enc->mon];
 
-        if (CHECK_GENDER(filter, PokemonGetGender(enc->PID, poke.gr))) {
+        uint8_t gender = PokemonGetGender(enc->PID, poke.gr);
+        if (CHECK_GENDER(filter, gender)) {
             free(enc);
             continue;
         }
@@ -456,6 +458,8 @@ void FilterApplyIVEstimateToWild(IVEstimate* target, WildFilter* filter) {
     for (i = 0; i < 6; i++ ){
         IVsFindBounds(target->rs[i], &l, &u);
         iv_bounds[i][0][0] = (uint8_t)l;
+        //fprintf(stdout, "%d - ", l);
         iv_bounds[i][0][1] = (uint8_t)u;
+        //fprintf(stdout, "%d\n", u);
     }
 }
