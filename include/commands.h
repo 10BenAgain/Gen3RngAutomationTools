@@ -39,6 +39,7 @@ void wildSearchExample();
 void searchMissingArgs(const char* subCommand);
 void listHandler(int argc, char** argv);
 void searchHandler(int argc, char** argv);
+void shinySIDHandler(int argc, char** argv);
 
 size_t getSubCommandCount(const char** sc);
 
@@ -62,6 +63,7 @@ static Flag searchFlags[9];
 
 static Command commands[] = {
         { "list", listHandler, "List various related data", LIST_SUB_COMMANDS },
+        { "t2s", shinySIDHandler, "Calculate the SID/TID shiny combination", NULL },
         { "search", searchHandler, "Search for Pokemon", SEARCH_SUBCOMMANDS, searchFlags, sizeof(searchFlags)/sizeof(searchFlags[0]) }
 };
 

@@ -49,7 +49,6 @@ void searchMissingArgs(const char* subCommand) {
         commandHelp();
         return;
     }
-
 }
 
 size_t getSubCommandCount(const char** sc) {
@@ -64,22 +63,71 @@ void commandHelp() {
     fprintf(stdout, "----List of available commands:----\n\n");
     for (size_t i = 0; i < COMMANDS_COUNT; i++) {
         fprintf(stdout, "Name: '%s'\n", commands[i].command);
-        fprintf(stdout, "Description: '%s'\nSubcommands:\n", commands[i].description);
-        for (size_t j = 0; j < getSubCommandCount(commands[i].subcommands); j++) {
-            fprintf(stdout, "   - %s\n", commands[i].subcommands[j]);
-            for (size_t k = 0; k < commands[i].f_size; k++) {
-                if (k == 0) {fprintf(stdout, "\tflags (flag | Requires arg | Description)\n");}
-                Flag flags = commands[i].flags[k];
-                fprintf(stdout, "\t ; '-%c' (%d) - %s, %s\n", flags.f, flags.args, flags.name, flags.description);
+        fprintf(stdout, "Description: '%s'\n", commands[i].description);
+
+        if (commands[i].subcommands != NULL) {
+            fprintf(stdout, "Subcommands:\n");
+            for (size_t j = 0; j < getSubCommandCount(commands[i].subcommands); j++) {
+                fprintf(stdout, "   - %s\n", commands[i].subcommands[j]);
+                for (size_t k = 0; k < commands[i].f_size; k++) {
+                    if (k == 0) {fprintf(stdout, "\tflags (flag | Requires arg | Description)\n");}
+                    Flag flags = commands[i].flags[k];
+                    fprintf(stdout, "\t ; '-%c' (%d) - %s, %s\n", flags.f, flags.args, flags.name, flags.description);
+                }
             }
         }
+
         fprintf(stdout, "\n");
     }
 }
+void shinySIDHandler(int argc, char** argv) {
+    if (argc < 4) {
+        commandHelp();
+        return;
+    }
+
+    long l;
+    char* lend;
+
+    uint32_t tid, pid;
+
+    l = strtol(argv[2], &lend, 10);
+    if (lend == argv[2]) {
+        fprintf(stdout, "Advances must be an integer\n");
+        return;
+    } else {
+        tid = l;
+    }
+
+    l = strtol(argv[3], &lend, 16);
+    if (lend == argv[3]) {
+        fprintf(stdout, "Advances must be a hexademical value. (0xE776EE3D or E776EE3D)\n");
+        return;
+    } else {
+        pid = l;
+    }
+
+    fprintf(stdout, "%d\n", TID_2_SHINY_TID(tid, pid));
+};
 
 void searchHandler(int argc, char** argv) {
     /* bin search static [Advances] [Pokemon] [Nature] [Level] [Ability] [HP] [ATK] [DEF] [SPA] [SPD] [SPE] [Gender] [Shiny] (16) */
     /* bin search wild [Advances] [Encounter Type] [Location] [Pokemon] [Nature] [Level] [Ability] [HP] [ATK] [DEF] [SPA] [SPD] [SPE] [Gender] [Shiny] (18) */
+
+    if (argc < 18 && argc > 16) {
+        searchMissingArgs(argv[2]);
+        return;
+    }
+
+    if (argc < 16 && argc >= 2) {
+        if (argc == 2) {
+            commandHelp();
+            return;
+        }
+        searchMissingArgs(argv[2]);
+        return;
+    }
+
     long l;
     char* lend;
     char* inipath = "settings.ini";
@@ -110,20 +158,6 @@ void searchHandler(int argc, char** argv) {
     Method wildMethod = H1;
 
     int wflag = 0, sflag = 0, rflag = 0, iflag = 0, tflag = 0, hflag = 0, lflag = 0, yflag = 0;
-
-    if (argc < 18 && argc > 16) {
-        searchMissingArgs(argv[2]);
-        return;
-    }
-
-    if (argc < 16 && argc >= 2) {
-        if (argc == 2) {
-            commandHelp();
-            return;
-        }
-        searchMissingArgs(argv[2]);
-        return;
-    }
 
 #define SEARCH_START 2
     int c;
@@ -525,7 +559,7 @@ void searchHandler(int argc, char** argv) {
         return;
     }
 
-    void* seeds;
+    InitialSeed* seeds;
     SeedOffset ofs = None;
 
     if (hflag) {
@@ -536,16 +570,18 @@ void searchHandler(int argc, char** argv) {
         ofs = HELD_SELECT;
     }
 
-    seeds = (InitialSeed* ) SeedLoadInitial(seedPath, &len, ofs);
+    seeds = SeedLoadInitial(seedPath, &len, ofs);
 
     if (rflag) {
-        int index;
         if (range > (maxAdvances - initAdvances)) {
             fprintf(stderr, "Seed range is greater than total advances!\n  Advances: %d\n  Range: %d\n", maxAdvances, range);
             return;
         }
-        if ((index = SeedFindIndex(seeds, initSeed, len) >= 0)) {
-            seeds = (InitialSeed* ) SeedGetSeedRange(seeds, len, index, range, &s_len);
+
+        int index = SeedFindIndex(seeds, initSeed, len);
+
+        if (index >= 0) {
+            seeds = SeedGetSeedRange(seeds, len, index, range, &s_len);
             len = s_len;
         } else {
             fprintf(stderr, "Unable to find initial seed in seed list.\n");
