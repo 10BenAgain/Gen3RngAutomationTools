@@ -25,6 +25,8 @@
 #define IV_MASK     0x1F
 #define IV_SHIFT    5
 
+#define TID_2_SHINY_TID(TID, PID) ((TID) ^ ((PID) >> 16) ^ ((PID) & 0xFFFF))
+
 typedef struct {
     uint32_t multiplier;
     uint32_t add;
