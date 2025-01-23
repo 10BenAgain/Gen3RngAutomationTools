@@ -8,9 +8,17 @@ set(EXECUTABLE_NAME "bin")
 
 option(USE_BUILD_PATH "Use build path for encslot reads" OFF)
 
+option(EXPANDED_PRINT "CLI 'pretty' print for search results" ON)
+
+if (EXPANDED_PRINT)
+    add_compile_definitions(EXPANDED_PRINT)
+endif()
+
 if(USE_BUILD_PATH)
     add_compile_definitions(BUILD_PATH)
 endif()
+
+add_compile_options(-O3)
 
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
