@@ -38,10 +38,10 @@ static Flag searchFlags[9] = {
 };
 
 void searchMissingArgs(const char* subCommand) {
-    if (COMATCH(subCommand, SEARCH_SUBCOMMANDS[0])) {
+    if (COMATCH(subCommand, SEARCH_SUB_COMMANDS[0])) {
         staticSearchExample();
         return;
-    } else if (COMATCH(subCommand, SEARCH_SUBCOMMANDS[1])) {
+    } else if (COMATCH(subCommand, SEARCH_SUB_COMMANDS[1])) {
         wildSearchExample();
         return;
     } else {
@@ -80,6 +80,7 @@ void commandHelp() {
         fprintf(stdout, "\n");
     }
 }
+
 void shinySIDHandler(int argc, char** argv) {
     if (argc < 4) {
         commandHelp();
@@ -131,7 +132,7 @@ void searchHandler(int argc, char** argv) {
     long l;
     char* lend;
     char* inipath = "settings.ini";
-    char* optflags = "thm:s:i:r:y:P:L:";
+    char* optflags = "Athm:s:i:r:y:P:L:";
     char* customSeedPath = NULL;
 
     Player player;
@@ -157,7 +158,10 @@ void searchHandler(int argc, char** argv) {
 
     Method wildMethod = H1;
 
-    int wflag = 0, sflag = 0, rflag = 0, iflag = 0, tflag = 0, hflag = 0, lflag = 0, yflag = 0;
+    InitialSeed* seeds = NULL;
+    SeedOffset ofs = None;
+
+    int wflag = 0, sflag = 0, rflag = 0, iflag = 0, tflag = 0, hflag = 0, lflag = 0, yflag = 0, aflag = 0;
 
 #define SEARCH_START 2
     int c;
@@ -234,6 +238,14 @@ void searchHandler(int argc, char** argv) {
                 customSeedPath = optarg;
                 lflag = 1;
                 break;
+            case 'A':
+                if (rflag || iflag || hflag || tflag) {
+                    fprintf(stderr, "One of more flags are not compatible with All Seed search (-i, -r, -h, -t)\n");
+                    return;
+                } else {
+                    aflag = 1;
+                    break;
+                }
             default:
                 fprintf(stdout, "Unable to parse flags\n");
                 return;
@@ -242,7 +254,7 @@ void searchHandler(int argc, char** argv) {
 
     int postFlags = SEARCH_START + optind;
 
-    if (COMATCH(argv[2], SEARCH_SUBCOMMANDS[0])) {
+    if (COMATCH(argv[2], SEARCH_SUB_COMMANDS[0])) {
         sflag = 1;
 
         /* Advances */
@@ -299,7 +311,7 @@ void searchHandler(int argc, char** argv) {
         }
 
         /* If target mon only has one ability, search for both options */
-        if (COMATCH(pokemon[mon].ab1, pokemon[mon].ab1)) {
+        if (COMATCH(pokemon[mon].ab0, pokemon[mon].ab1)) {
             sf.ability[0] = 1;
             sf.ability[1] = 1;
         }
@@ -341,7 +353,7 @@ void searchHandler(int argc, char** argv) {
             return;
         }
 
-    } else if (COMATCH(argv[2], SEARCH_SUBCOMMANDS[1])) {
+    } else if (COMATCH(argv[2], SEARCH_SUB_COMMANDS[1])) {
         wflag = 1;
 
         /* Advances */
@@ -470,7 +482,7 @@ void searchHandler(int argc, char** argv) {
             return;
         }
 
-        if (COMATCH(pokemon[mon].ab1, pokemon[mon].ab1)) {
+        if (COMATCH(pokemon[mon].ab0, pokemon[mon].ab1)) {
             wf.ability[0] = 1;
             wf.ability[1] = 1;
         }
@@ -559,40 +571,37 @@ void searchHandler(int argc, char** argv) {
         return;
     }
 
-    InitialSeed* seeds;
-    SeedOffset ofs = None;
+    if (!aflag) {
 
-    if (hflag) {
-        ofs = HELD_A;
-    }
+        if (hflag) { ofs = HELD_A; }
 
-    if (tflag) {
-        ofs = HELD_SELECT;
-    }
+        if (tflag) { ofs = HELD_SELECT; }
 
-    seeds = SeedLoadInitial(seedPath, &len, ofs);
+        seeds = SeedLoadInitial(seedPath, &len, ofs);
 
-    if (rflag) {
-        if (range > (maxAdvances - initAdvances)) {
-            fprintf(stderr, "Seed range is greater than total advances!\n  Advances: %d\n  Range: %d\n", maxAdvances, range);
-            return;
+        if (rflag) {
+            if (range > (maxAdvances - initAdvances)) {
+                fprintf(stderr, "Seed range is greater than total advances!\n  Advances: %d\n  Range: %d\n",
+                        maxAdvances, range);
+                return;
+            }
+
+            int index = SeedFindIndex(seeds, initSeed, len);
+
+            if (index >= 0) {
+                seeds = SeedGetSeedRange(seeds, len, index, range, &s_len);
+                len = s_len;
+            } else {
+                fprintf(stderr, "Unable to find initial seed in seed list.\n");
+                return;
+            }
         }
 
-        int index = SeedFindIndex(seeds, initSeed, len);
-
-        if (index >= 0) {
-            seeds = SeedGetSeedRange(seeds, len, index, range, &s_len);
-            len = s_len;
-        } else {
-            fprintf(stderr, "Unable to find initial seed in seed list.\n");
+        if (seeds == NULL) {
+            perror("Failed to load initial seed list");
+            free(seeds);
             return;
         }
-    }
-
-    if(seeds == NULL) {
-        perror("Failed to load initial seed list");
-        free(seeds);
-        return;
     }
 
     if (wflag) {
@@ -612,6 +621,8 @@ void searchHandler(int argc, char** argv) {
 
         if (iflag) {
             FilterGenerateWildEncounter(&HEAD, player, wildMethod, slots, et, wf, initSeed, initAdvances, maxAdvances);
+        } else if (aflag) {
+            FilterGenerateAllWildEncounters(&HEAD, player, wildMethod, slots, et, wf, initAdvances, maxAdvances);
         } else {
             FilterGenerateWildEncountersFromSeedList(&HEAD, player, wildMethod, slots, et, wf, seeds, len, initAdvances, maxAdvances);
         }
@@ -628,6 +639,8 @@ void searchHandler(int argc, char** argv) {
 
         if (iflag) {
             FilterGenerateStaticEncounter(&HEAD, player, M1, sf, mon, initSeed, initAdvances, maxAdvances);
+        } else if (aflag) {
+            FilterGenerateAllStaticEncounters(&HEAD, player, M1, sf, mon, initAdvances, maxAdvances);
         } else {
             FilterGenerateStaticEncounterFromSeedList(&HEAD, player, M1, sf, seeds, len, mon, initAdvances, maxAdvances);
         }
