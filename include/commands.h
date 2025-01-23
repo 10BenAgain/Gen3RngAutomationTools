@@ -53,7 +53,7 @@ static const char* LIST_SUB_COMMANDS[7] = {
         NULL
 };
 
-static const char* SEARCH_SUBCOMMANDS[3] = {
+static const char* SEARCH_SUB_COMMANDS[3] = {
         "static",
         "wild",
         NULL
@@ -64,7 +64,7 @@ static Flag searchFlags[9];
 static Command commands[] = {
         { "list", listHandler, "List various related data", LIST_SUB_COMMANDS },
         { "t2s", shinySIDHandler, "Calculate the SID/TID shiny combination", NULL },
-        { "search", searchHandler, "Search for Pokemon", SEARCH_SUBCOMMANDS, searchFlags, sizeof(searchFlags)/sizeof(searchFlags[0]) }
+        { "search", searchHandler, "Search for Pokemon", SEARCH_SUB_COMMANDS, searchFlags, sizeof(searchFlags) / sizeof(searchFlags[0]) }
 };
 
 #endif
