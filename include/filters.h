@@ -87,8 +87,8 @@ typedef struct {
     char symbol;
 } WildFilter;
 
-inline void FilterApplyNatureToStatic(Nature nt, StaticFilter* filter) { filter->natures[nt.key] = 1; }
-inline void FilterApplyNatureToWild(Nature nt, WildFilter* filter) { filter->natures[nt.key] = 1; }
+static inline void FilterApplyNatureToStatic(Nature nt, StaticFilter* filter) { filter->natures[nt.key] = 1; }
+static inline void FilterApplyNatureToWild(Nature nt, WildFilter* filter) { filter->natures[nt.key] = 1; }
 
 void FilterApplyIVEstimateToWild(IVEstimate* target, WildFilter* filter);
 void FilterApplyIVEstimateToStatic(IVEstimate* target, StaticFilter* filter);
