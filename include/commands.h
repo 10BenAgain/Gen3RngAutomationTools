@@ -17,25 +17,14 @@
 #define COMMANDS_COUNT (sizeof(commands)/sizeof(commands[0]))
 
 typedef struct {
-    char f;
-    const char* name;
-    const char* description;
-    uint8_t args;
-} Flag;
-
-typedef struct {
     const char* command;
     void (*handler)(int argc, char** argv);
     const char* description;
     const char** subcommands;
-    Flag* flags;
-    size_t f_size;
+    void (*flag)();
 } Command;
 
 void commandHelp();
-void staticSearchExample();
-void wildSearchExample();
-
 void searchMissingArgs(const char* subCommand);
 void listHandler(int argc, char** argv);
 void searchHandler(int argc, char** argv);
@@ -59,12 +48,12 @@ static const char* SEARCH_SUB_COMMANDS[3] = {
         NULL
 };
 
-static Flag searchFlags[9];
+void PrintSearchFlags();
 
 static Command commands[] = {
-        { "list", listHandler, "List various related data", LIST_SUB_COMMANDS },
-        { "t2s", shinySIDHandler, "Calculate the SID/TID shiny combination", NULL },
-        { "search", searchHandler, "Search for Pokemon", SEARCH_SUB_COMMANDS, searchFlags, sizeof(searchFlags) / sizeof(searchFlags[0]) }
+        { "list",   listHandler,      "List various related data",               LIST_SUB_COMMANDS,    NULL },
+        { "t2s",    shinySIDHandler,  "Calculate the SID/TID shiny combination", NULL,                 NULL },
+        { "search", searchHandler,    "Search for Pokemon",                      SEARCH_SUB_COMMANDS,  PrintSearchFlags }
 };
 
 #endif

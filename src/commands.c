@@ -1,48 +1,45 @@
 #include "../include/commands.h"
 
-void staticSearchExample() {
-    fprintf(stdout, "\nMissing required arguements for static search command:\n");
-    fprintf(stdout, "Static search arguments: bin search static [Advances] [Pokemon] [Nature] [Level] [Ability] [HP] [ATK] [DEF] [SPA] [SPD] [SPE] [Gender] [Shiny]\n");
-    fprintf(stdout, "Exmaple command:\n");
-    fprintf(stdout, "   --search static 1000 Snorlax Sassy 30 0 145 80 58 49 73 32 Male Star\n");
-    fprintf(stdout, "   --search static 1000 Snorlax 30 Relaxed 1 145 80 58 49 73 32 Female Square\n");
+void PrintWildSearchExample() {
+    printf(
+            "\nArgs: [Advances] [Encounter Type] [Location] [Pokemon] [Nature] [Level] [Ability] [HP] [ATK] [DEF] [SPA] [SPD] [SPE] [Gender] [Shiny]\n"
+            "Example:\n"
+            "   gts search wild 1000 grass 55 Sandshrew Sassy 15 0 44 32 38 12 18 21 Female Star\n"
+            "   gts search wild 1000 grass 55 Sandshrew Jolly 15 1 44 32 38 12 18 21 Male None  \n"
+    );
 }
 
-void wildSearchExample() {
-    fprintf(stdout, "\nMissing required arguements for wild search command:\n");
-    fprintf(stdout, "Wild search arguments: bin search wild [Advances] [Encounter Type] [Location] [Pokemon] [Nature] [Level] [Ability] [HP] [ATK] [DEF] [SPA] [SPD] [SPE] [Gender] [Shiny]\n");
-    fprintf(stdout, "Exmaple command:\n");
-    fprintf(stdout, "   --search wild 1000 grass 55 Sandshrew Sassy 15 0 44 32 38 12 18 21 Female Star\n");
-    fprintf(stdout, "   --search wild 1000 grass 55 Sandshrew Jolly 15 1 44 32 38 12 18 21 Male None\n");
+void PrintStaticSearchExample() {
+    printf(
+            "\nArgs: [Advances] [Pokemon] [Nature] [Level] [Ability] [HP] [ATK] [DEF] [SPA] [SPD] [SPE] [Gender] [Shiny]\n"
+            "Example:\n"
+            "   gts search static 1000 Snorlax 30 Relaxed 1 145 80 58 49 73 32 Female Square\n"
+            "   gts static 1000 Snorlax Sassy 30 0 145 80 58 49 73 32 Male Star\n"
+    );
 }
 
-static Flag searchFlags[9] = {
-        { 't', "Hold Select",
-                "Use this flag to tell the program to add the held button 'Select' to the seed list. (1)", 0 },
-        { 'h', "Hold A",
-                "Use this flag to tell the program to add the held button 'A' to the seed list. (12)", 0 },
-        { 'm', "Method",
-                "Use this flag to set the wild method. By default, the program searches using H1. The only other options are 'H2' and 'H4'", 1},
-        { 's', "Advance Start",
-                "Use this flag to tell the program where to begin searching. By default, the program will begin at 0.", 1},
-        { 'i', "Initial Seed",
-                "Use this flag to set a single initial seed to search for. By default, the program uses all possible seeds based on your settings file which becomes slower with higher max advances", 1 },
-        { 'r', "Seed Range",
-                "Use this flag to specify a range of seeds from your initial seed. This flag requires '-i' to be set FIRST. Example: '-i E585 -r 100'. This will create a seed list starting from 100 below E585 + 100 above E585", 1 },
-        { 'y', "Unown Symbol",
-          "Use this flag to specify a specific Unown Symbol. Example '-y C' for C, '-y !' for !", 1 },
-        { 'P', "Settings Path",
-                "Use this flag to tell the program where to search for your settings .ini file. By default this is set to 'settings.ini'", 1},
-        { 'L', "Seed List",
-          "Use this flag to tell the program where to use a custom seed list for. The list must match the same format as the others from your data folder", 0}
-};
+void PrintSearchFlags() {
+    printf(
+            "\n"
+            " -t ; Add 'Select' offset to seed list\n"
+            " -h ; Add 'A' offset to seed list      \n"
+            " -m ; Wild method. H2 or H4            \n"
+            " -s ; Advance start point. Default is 0\n"
+            " -i ; Specify initial seed start       \n"
+            " -r ; Specify seed 'range'. -i required\n"
+            " -y ; Required for Unown symbol search  \n"
+            " -P ; Path to settings.ini file        \n"
+            " -L ; Path to custom seed list         \n"
+            " -A ; Search all seeds. (0x0-0xFFFF)   \n"
+    );
+}
 
 void searchMissingArgs(const char* subCommand) {
     if (COMATCH(subCommand, SEARCH_SUB_COMMANDS[0])) {
-        staticSearchExample();
+        PrintStaticSearchExample();
         return;
     } else if (COMATCH(subCommand, SEARCH_SUB_COMMANDS[1])) {
-        wildSearchExample();
+        PrintWildSearchExample();
         return;
     } else {
         fprintf(stdout, "Unable to find command '%s'\n\n'", subCommand);
@@ -60,23 +57,21 @@ size_t getSubCommandCount(const char** sc) {
 }
 
 void commandHelp() {
-    fprintf(stdout, "----List of available commands:----\n\n");
     for (size_t i = 0; i < COMMANDS_COUNT; i++) {
         fprintf(stdout, "Name: '%s'\n", commands[i].command);
-        fprintf(stdout, "Description: '%s'\n", commands[i].description);
+        fprintf(stdout, " Description: '%s'\n", commands[i].description);
 
         if (commands[i].subcommands != NULL) {
-            fprintf(stdout, "Subcommands:\n");
+            fprintf(stdout, " Subcommands:\n");
             for (size_t j = 0; j < getSubCommandCount(commands[i].subcommands); j++) {
-                fprintf(stdout, "   - %s\n", commands[i].subcommands[j]);
-                for (size_t k = 0; k < commands[i].f_size; k++) {
-                    if (k == 0) {fprintf(stdout, "\tflags (flag | Requires arg | Description)\n");}
-                    Flag flags = commands[i].flags[k];
-                    fprintf(stdout, "\t ; '-%c' (%d) - %s, %s\n", flags.f, flags.args, flags.name, flags.description);
-                }
+                fprintf(stdout, " -%s\n", commands[i].subcommands[j]);
             }
         }
 
+        if (commands[i].flag != NULL) {
+            printf(" Flags:");
+            commands[i].flag();
+        }
         fprintf(stdout, "\n");
     }
 }
