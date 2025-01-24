@@ -4,7 +4,7 @@ project(Generation3LCRNG)
 
 set(CMAKE_C_STANDARD 11)
 
-set(EXECUTABLE_NAME "bin")
+ set(EXECUTABLE_NAME "gts")
 
 option(USE_BUILD_PATH "Use build path for encslot reads" OFF)
 

@@ -3,7 +3,7 @@
 
 #include "include/commands.h"
 
-#define PROG_NAME "bin"
+#define PROG_NAME "gts"
 
 int main(int argc, char** argv) {
     if (argc < 2) {
