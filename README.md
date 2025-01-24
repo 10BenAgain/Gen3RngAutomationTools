@@ -2,7 +2,7 @@
 Cross-platform CLI tool for searching encounters in Pokémon Fire Red and Leaf Green. My goal was to learn more about the C programming language and to avoid having to use the Gen3SeedAssistant tool through Wine on my Linux machine. 
 
 ## Installation
-Minimal installation is required. Just extract the release files and run the program from your desired directory. There are two additional components that are required alongside the binary file, however. There is a `data` folder that must reside in the same directory as the binary and another `settings.ini` file that must be present as well. This will be briefly covered later. 
+Minimal installation is required. Just extract the release files and run the program from your desired directory. There are two additional components that are required alongside the gtsary file, however. There is a `data` folder that must reside in the same directory as the gtsary and another `settings.ini` file that must be present as well. This will be briefly covered later. 
 
 ## Building
 If you want to build this program from source, there are a couple of requirements.
@@ -18,20 +18,21 @@ cd build
 cmake .. -USE_BUILD_PATH=ON
 make
 ```
-If everything went smoothly, you should now be left with an executable `bin`
+If everything went smoothly, you should now be left with an executable `gts`
 ## Usage
-There are only 3 commands available in this program:
+There are only 4 commands available in this program:
 
-<pre><code>bin <span style="color: #19AC00">help</span>    <i><span style="color: #969696"># Prints all the commands, subcommands and available flags</span></i>
-bin <span style="color: #FF7609">list</span>    <i><span style="color: #969696"># List relevant data components for search</span></i>
-bin <span style="color: #e28743">search</span>  <i><span style="color: #969696"># Searches for targets</span></i>
+<pre><code>gts <span style="color: #19AC00">help</span>    <i><span style="color: #969696"># Prints all the commands, subcommands and available flags</span></i>
+gts <span style="color: #FF7609">list</span>    <i><span style="color: #969696"># List relevant data components for search</span></i>
+gts <span style="color: #FF7609">t2s</span>     <i><span style="color: #969696"># Calculates Shiny TID/PID Combo</span></i>
+gts <span style="color: #e28743">search</span>  <i><span style="color: #969696"># Searches for targets</span></i>
 </code></pre>
 
 ### <ins>List</ins> 
 The list will be used to get the proper values for searching location indexes. For example, to find the appropriate index for `Route 1` in a list of `Grass` areas in Fire Red, run 
-<pre><code>bin <span style="color: #FF7609">list</span> locations grass <span style="color: #FF5D42">fr</span></code></pre>
+<pre><code>gts <span style="color: #FF7609">list</span> locations grass <span style="color: #FF5D42">fr</span></code></pre>
 For Leaf Green, run
-<pre><code>bin <span style="color: #FF7609">list</span> locations grass <span style="color: #599E00">lg</span></code></pre>
+<pre><code>gts <span style="color: #FF7609">list</span> locations grass <span style="color: #599E00">lg</span></code></pre>
 
 Below is a list of available location options to list:
 ```bash
@@ -43,7 +44,7 @@ Below is a list of available location options to list:
 'super' # Super Rod
 ```
 To see possible encounters for a specific location, you can run
-<pre><code>bin <span style="color: #FF7609">list</span> encounter grass 46 lg</code></pre>
+<pre><code>gts <span style="color: #FF7609">list</span> encounter grass 46 lg</code></pre>
 
 Where 46 corresponds to `Route 1` from the resulting list given from running the `locations grass lg` command.
 
@@ -52,12 +53,17 @@ Other subcommands for `list` include:
 
 | Name  | Description | Usage |
 | ------------- | ------------- | - |
-| natures   | Prints all nature strings and their stat boost information  | bin list natures|
-|  gender   | Prints the 3 possible gender options used for searching  | bin list gender |
-|   shiny   | Prints the 3 possible shiny types used for searching  | bin list shiny |
-|  hidden   | Prints all Hidden Ability type strings  | bin list hidden |
+| natures   | Prints all nature strings and their stat boost information  | gts list natures|
+|  gender   | Prints the 3 possible gender options used for searching  | gts list gender |
+|   shiny   | Prints the 3 possible shiny types used for searching  | gts list shiny |
+|  hidden   | Prints all Hidden Ability type strings  | gts list hidden |
 
-
+### <ins>T2S</ins>
+Calculate shiny TID/PID combo. Returns SID. 
+```bash
+# Example
+gts t2s 00111 A777C735 # Returns 32879
+```
 ### <ins>Search</ins>
 Searching requires many arguments and configurations. To simplify the process, the program will search possible __known__ farmed seed values based on the `settings.ini` values only. By default, the program looks for a `settings.ini` file in its working directory that looks like this:
 ```ini
@@ -83,66 +89,67 @@ The `settings.ini` file also eliminates the need to pass in trainer data to the 
 
 #### <ins>Static Search</ins>
 Searching for static encounters requires the following arguments:
-<pre><code>bin <span style="color: #e28743">search</span> <span style="color: #FEEB40">static</span> [Advances] [Pokemon] [Nature] [Level] [Ability] <span style="color: #2A8EC5">[HP] [ATK] [DEF] [SPA] [SPD] [SPE]</span> [Gender] [Shiny]
+<pre><code>gts <span style="color: #e28743">search</span> <span style="color: #FEEB40">static</span> [Advances] [Pokemon] [Nature] [Level] [Ability] <span style="color: #2A8EC5">[HP] [ATK] [DEF] [SPA] [SPD] [SPE]</span> [Gender] [Shiny]
 </code></pre>
 
 > Ability argument takes an integer. Either 0 or 1 respectively. Since many Pokémon have the same ability for 0 and 1 (Bulbasaur only has Overgrow), if this is the case, the program will search for both.
 
 Example:
-<pre><code>bin <span style="color: #e28743">search</span> <span style="color: #FEEB40">static</span> 1000 Bulbasaur Docile 5 1 <span style="color: #2A8EC5">19 11 10 12 12 10</span> Male None
+<pre><code>gts <span style="color: #e28743">search</span> <span style="color: #FEEB40">static</span> 1000 Bulbasaur Docile 5 1 <span style="color: #2A8EC5">19 11 10 12 12 10</span> Male None
 </code></pre>
 
 #### <ins>Wild Search</ins>
 Searching for wild encounters requires the following arguments:
-<pre><code>bin <span style="color: #e28743">search</span> <span style="color: #7FBD81">wild</span> [Advances] [Encounter Type] [Location] [Pokemon] [Nature] [Level] [Ability] <span style="color: #2A8EC5">[HP] [ATK] [DEF] [SPA] [SPD] [SPE]</span> [Gender] [Shiny]</code></pre>
+<pre><code>gts <span style="color: #e28743">search</span> <span style="color: #7FBD81">wild</span> [Advances] [Encounter Type] [Location] [Pokemon] [Nature] [Level] [Ability] <span style="color: #2A8EC5">[HP] [ATK] [DEF] [SPA] [SPD] [SPE]</span> [Gender] [Shiny]</code></pre>
 
 
 Example:
-<pre><code>bin <span style="color: #e28743">search</span> <span style="color: #7FBD81">wild</span> 1000 grass 37 Ditto Rash 30 1 <span style="color: #2A8EC5">75 41 37 42 30 41</span> None None</code></pre>
+<pre><code>gts <span style="color: #e28743">search</span> <span style="color: #7FBD81">wild</span> 1000 grass 37 Ditto Rash 30 1 <span style="color: #2A8EC5">75 41 37 42 30 41</span> None None</code></pre>
 
 ### <ins>Flags</ins>
 Flags passed to the program must be added to the after the search subcommand. (Wild or Static)
 
-| Flag  | Description                                                                                                         | Args |
-| ------------- |---------------------------------------------------------------------------------------------------------------------| - |
-| 't'   | Adds an offset of 1 to seed list. (Holding Select)                                                                  | None  |
-| 'h'   | Adds an offset of 12 to seed list (Holding A)                                                                       | None | | -h |
-| 'm'   | Sets the wild search method. By default this is set to H1                                                           | H2 or H4 |
-| 's'   | Sets the start point for advances. By default this is set to 0                                                      | Number |
-| 'i'   | Tells the program to search on only one seed                                                                        | Number (Hex) |
-| 'r'   | Specify the seed 'range' to search by instead of entire list. __"-i"__ MUST be set first and must proceed this flag | Number |
-| 'y'   | For searching Unowns, specify the symbol to filter                                                                  | Character |
-| 'P'   | Tells the program where to search for a settings.ini file                                                           | Path to File |
-| 'L'   | Tells the program where to search for a custom seed list                                                            | Path to File |
+| Flag | Description                                                                                                         | Args         |
+|------|---------------------------------------------------------------------------------------------------------------------|--------------|
+| 't'  | Adds an offset of 1 to seed list. (Holding Select)                                                                  | None         |
+| 'h'  | Adds an offset of 12 to seed list (Holding A)                                                                       | None         | | -h |
+| 'm'  | Sets the wild search method. By default this is set to H1                                                           | H2 or H4     |
+| 's'  | Sets the start point for advances. By default this is set to 0                                                      | Number       |
+| 'i'  | Tells the program to search on only one seed                                                                        | Number (Hex) |
+| 'r'  | Specify the seed 'range' to search by instead of entire list. __"-i"__ MUST be set first and must proceed this flag | Number       |
+| 'y'  | For searching Unowns, specify the symbol to filter                                                                  | Character    |
+| 'P'  | Tells the program where to search for a settings.ini file                                                           | Path to File |
+| 'L'  | Tells the program where to search for a custom seed list                                                            | Path to File |
+| 'A'  | Searches all possible seeds from 0x0 to 0xFFFF                                                                      | None         |
 
 #### <ins>Examples</ins>
 Using the 't' or 'h' flag
-<pre><code>bin <span style="color: #e28743">search</span> <span style="color: #7FBD81">wild</span> -t 1000 grass 37 Ditto Rash 30 1 <span style="color: #2A8EC5">75 41 37 42 30 41</span> None None </code></pre>
-<pre><code>bin <span style="color: #e28743">search</span> <span style="color: #7FBD81">wild</span> -h 1000 grass 37 Ditto Rash 30 1 <span style="color: #2A8EC5">75 41 37 42 30 41</span> None None </code></pre>
+<pre><code>gts <span style="color: #e28743">search</span> <span style="color: #7FBD81">wild</span> -t 1000 grass 37 Ditto Rash 30 1 <span style="color: #2A8EC5">75 41 37 42 30 41</span> None None </code></pre>
+<pre><code>gts <span style="color: #e28743">search</span> <span style="color: #7FBD81">wild</span> -h 1000 grass 37 Ditto Rash 30 1 <span style="color: #2A8EC5">75 41 37 42 30 41</span> None None </code></pre>
 Using the 'm' flag
-<pre><code>bin <span style="color: #e28743">search</span> <span style="color: #7FBD81">wild</span> -m H4 1000 grass 37 Ditto Rash 30 1 <span style="color: #2A8EC5">75 41 37 42 30 41</span> None None</code></pre>
+<pre><code>gts <span style="color: #e28743">search</span> <span style="color: #7FBD81">wild</span> -m H4 1000 grass 37 Ditto Rash 30 1 <span style="color: #2A8EC5">75 41 37 42 30 41</span> None None</code></pre>
 Using the 's' flag
-<pre><code>bin <span style="color: #e28743">search</span> <span style="color: #7FBD81">wild</span> -s 800 1000 grass 37 Ditto Rash 30 1 <span style="color: #2A8EC5">75 41 37 42 30 41</span> None None</code></pre>
+<pre><code>gts <span style="color: #e28743">search</span> <span style="color: #7FBD81">wild</span> -s 800 1000 grass 37 Ditto Rash 30 1 <span style="color: #2A8EC5">75 41 37 42 30 41</span> None None</code></pre>
 > This will begin the search at advance 800 and stop 1000 so the resulting range will be 200 advances. By default, the program will search all advances up to 1000 if this flag is not set.
 
 Using the 'i' flag
-<pre><code>bin <span style="color: #e28743">search</span> <span style="color: #7FBD81">wild</span> -i 0xE585 1000 grass 37 Ditto Rash 30 1 <span style="color: #2A8EC5">75 41 37 42 30 41</span> None None </code></pre>
+<pre><code>gts <span style="color: #e28743">search</span> <span style="color: #7FBD81">wild</span> -i 0xE585 1000 grass 37 Ditto Rash 30 1 <span style="color: #2A8EC5">75 41 37 42 30 41</span> None None </code></pre>
 > Instead of using the entire seed list for the given settings.ini parameters, searches with an initial seed of the one provided (0xE585) and ignores all the rest
 
 Using the 'r' flag
-<pre><code>bin <span style="color: #e28743">search</span> <span style="color: #7FBD81">wild</span> -i 0xE585 -r 50 1000 grass 37 Ditto Rash 30 1 <span style="color: #2A8EC5">75 41 37 42 30 41</span> None None </code></pre>
+<pre><code>gts <span style="color: #e28743">search</span> <span style="color: #7FBD81">wild</span> -i 0xE585 -r 50 1000 grass 37 Ditto Rash 30 1 <span style="color: #2A8EC5">75 41 37 42 30 41</span> None None </code></pre>
 > This flag REQUIRES the -i flag to be set BEFORE it. Essentially this will search your active seed list for the passed seed (0xE585) and make sure it exists. If yes, a new seed list will be generated with 50 seeds below the target and 50 seed above the target. This is meant to decrease the processing time by not searching every single possible known seed. 
 
 Using the 'y' flag
-<pre><code>bin <span style="color: #e28743">search</span> <span style="color: #7FBD81">wild</span> -y C 1000 grass 90 Unown Relaxed <span style="color: #2A8EC5">25 0 64 44 35 47 33 28</span> None None </code></pre>
+<pre><code>gts <span style="color: #e28743">search</span> <span style="color: #7FBD81">wild</span> -y C 1000 grass 90 Unown Relaxed <span style="color: #2A8EC5">25 0 64 44 35 47 33 28</span> None None </code></pre>
 > Since Unown's are handled slightly differently, a flag is required to filter further into the Unown symbol if needed. In the example above, the program will search only for Unown-C
 
 Using the 'P' flag
-<pre><code>bin <span style="color: #e28743">search</span> <span style="color: #7FBD81">wild</span> -P C:\Users\RNG\settings2.ini 1000 grass 37 Ditto Rash 30 1 <span style="color: #2A8EC5">75 41 37 42 30 41</span> None None</code></pre>
+<pre><code>gts <span style="color: #e28743">search</span> <span style="color: #7FBD81">wild</span> -P C:\Users\RNG\settings2.ini 1000 grass 37 Ditto Rash 30 1 <span style="color: #2A8EC5">75 41 37 42 30 41</span> None None</code></pre>
 > Settings must match the structure as described the beginning of the search section
 
 Using the 'L' flag
-<pre><code>bin <span style="color: #e28743">search</span> <span style="color: #7FBD81">wild</span> -P C:\Users\RNG\MySeedList.txt 1000 grass 37 Ditto Rash 30 1 <span style="color: #2A8EC5">75 41 37 42 30 41</span> None None</code></pre>
+<pre><code>gts <span style="color: #e28743">search</span> <span style="color: #7FBD81">wild</span> -P C:\Users\RNG\MySeedList.txt 1000 grass 37 Ditto Rash 30 1 <span style="color: #2A8EC5">75 41 37 42 30 41</span> None None</code></pre>
 To use a custom list of seeds, you will need to create one. The structure is very simple and looks like this:
 
 ```
@@ -153,6 +160,10 @@ To use a custom list of seeds, you will need to create one. The structure is ver
 ```
 Where the first number is the intro timer and the second is the seed value. Since the seed timer is unused for this program, it can be just left as 0. Create your list as a text file. An example custom seed list is included in the download folder of this program named `MyCustomSeedList.txt`
 > Sometimes if you have your custom seed list open in a text editor and the program tries to read it, it may read garbage data so make sure to save and close the file before running the search.
+
+Using the 'A' flag
+<pre><code>gts <span style="color: #e28743">search</span> <span style="color: #7FBD81">wild</span> -A 1000 grass 37 Ditto Rash 30 1 <span style="color: #2A8EC5">75 41 37 42 30 41</span> None None</code></pre>
+> Searches all all possible seeds regardless of settings. 0x0 to 0xFFFF. Using this flag can take a long time to process
 
 ## Planned Improvements
 - [ ] Add RSE Support 
